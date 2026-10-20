@@ -4,10 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Melitia Master — AI Online Mastering</title>
-  <meta name="description" content="Melitia Master — Professional AI-powered online mastering. Like Waves & Sony. Upload, process, download.">
+  <meta name="description" content="Melitia Master — Professional AI-powered online mastering. Waves / Sony style. Theater, Club, Commercial, Radio, Live.">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#000000">
-  <link rel="apple-touch-icon" href="/icon-192.png">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { 
@@ -16,80 +15,95 @@
       min-height: 100vh; padding: 20px;
       background: linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 100%);
     }
-    .container { max-width: 600px; margin: 0 auto; }
-    h1 { font-size: 2.5rem; text-align: center; margin-bottom: 10px; background: linear-gradient(90deg, #ff00aa, #00aaff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .subtitle { text-align: center; color: #aaa; margin-bottom: 30px; }
+    .container { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 2.4rem; text-align: center; margin-bottom: 8px; background: linear-gradient(90deg, #ff00aa, #00aaff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { text-align: center; color: #aaa; margin-bottom: 24px; font-size: 0.95rem; }
     .upload-area {
-      border: 2px dashed #ff00aa; border-radius: 16px; padding: 40px 20px;
-      text-align: center; margin-bottom: 20px; background: rgba(255,0,170,0.05);
+      border: 2px dashed #ff00aa; border-radius: 16px; padding: 36px 16px;
+      text-align: center; margin-bottom: 16px; background: rgba(255,0,170,0.05);
       cursor: pointer; transition: all 0.3s;
     }
     .upload-area:hover, .upload-area.dragover { background: rgba(255,0,170,0.15); border-color: #00aaff; }
-    .controls { display: grid; gap: 15px; margin: 20px 0; }
-    label { display: flex; justify-content: space-between; font-size: 0.9rem; color: #ccc; }
-    input[type="range"] { width: 60%; }
-    .presets { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 15px 0; }
-    button {
-      background: #ff00aa; color: white; border: none; padding: 12px 24px;
-      border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1rem;
+    .presets { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 12px 0 16px; }
+    .presets button {
+      background: #1a1a1a; color: #fff; border: 1px solid #ff00aa; padding: 10px 16px;
+      border-radius: 24px; font-weight: 600; cursor: pointer; font-size: 0.9rem;
     }
-    button:hover { background: #ff33bb; }
-    button:disabled { background: #333; cursor: not-allowed; }
-    .player { margin-top: 20px; }
-    audio { width: 100%; margin: 10px 0; }
-    .status { text-align: center; margin: 15px 0; min-height: 24px; color: #00aaff; }
-    .install-btn { display: none; margin: 20px auto; background: #00aaff; }
-    footer { text-align: center; margin-top: 40px; color: #666; font-size: 0.8rem; }
+    .presets button.active, .presets button:hover { background: #ff00aa; }
+    .controls { display: grid; gap: 12px; margin: 16px 0; }
+    label { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #ccc; }
+    input[type="range"] { width: 55%; accent-color: #ff00aa; }
+    button.primary {
+      background: #ff00aa; color: white; border: none; padding: 14px 28px;
+      border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%;
+    }
+    button.primary:disabled { background: #333; cursor: not-allowed; }
+    .status { text-align: center; margin: 12px 0; min-height: 22px; color: #00aaff; font-size: 0.95rem; }
+    .preview {
+      margin-top: 20px; background: rgba(255,255,255,0.03); border-radius: 16px; padding: 16px;
+    }
+    .ab-controls { display: flex; gap: 10px; margin: 10px 0; }
+    .ab-controls button { flex: 1; padding: 12px; border-radius: 24px; border: none; font-weight: 600; cursor: pointer; }
+    .ab-controls .orig { background: #333; color: #fff; }
+    .ab-controls .mast { background: #ff00aa; color: #fff; }
+    audio { width: 100%; margin: 8px 0; }
+    footer { text-align: center; margin-top: 36px; color: #666; font-size: 0.75rem; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Melitia Master</h1>
-    <p class="subtitle">AI Online Mastering • Waves / Sony Style</p>
+    <p class="subtitle">AI Online Mastering • Waves / Sony Style • Theater • Club • Commercial • Radio • Live</p>
 
     <div class="upload-area" id="dropzone">
       <p>Drop your track here or tap to upload</p>
-      <p style="font-size:0.8rem;color:#888;margin-top:8px;">WAV, MP3, AIFF — up to 100MB</p>
+      <p style="font-size:0.8rem;color:#888;margin-top:6px;">WAV, MP3, AIFF — up to 100MB</p>
       <input type="file" id="fileInput" accept="audio/*" hidden>
     </div>
 
-    <div class="presets">
-      <button onclick="applyPreset('warm')">Warm</button>
-      <button onclick="applyPreset('loud')">Loud</button>
-      <button onclick="applyPreset('bright')">Bright</button>
-      <button onclick="applyPreset('radio')">Radio</button>
-      <button onclick="applyPreset('clean')">Clean</button>
+    <div class="presets" id="presetBar">
+      <button data-preset="sony" onclick="applyPreset('sony')">Sony</button>
+      <button data-preset="theater" onclick="applyPreset('theater')">Theater</button>
+      <button data-preset="club" onclick="applyPreset('club')">Club</button>
+      <button data-preset="commercial" onclick="applyPreset('commercial')">Commercial</button>
+      <button data-preset="radio" onclick="applyPreset('radio')">Radio</button>
+      <button data-preset="live" onclick="applyPreset('live')">Live</button>
     </div>
 
     <div class="controls">
       <label>Loudness <span id="loudnessVal">0</span> dB
-        <input type="range" id="loudness" min="-6" max="12" value="0" step="0.5">
+        <input type="range" id="loudness" min="-6" max="10" value="2" step="0.5">
       </label>
       <label>Bass <span id="bassVal">0</span>
-        <input type="range" id="bass" min="-12" max="12" value="0" step="0.5">
+        <input type="range" id="bass" min="-10" max="10" value="0" step="0.5">
+      </label>
+      <label>Mid <span id="midVal">0</span>
+        <input type="range" id="mid" min="-8" max="8" value="0" step="0.5">
       </label>
       <label>Treble <span id="trebleVal">0</span>
-        <input type="range" id="treble" min="-12" max="12" value="0" step="0.5">
+        <input type="range" id="treble" min="-10" max="10" value="0" step="0.5">
       </label>
       <label>Presence <span id="presenceVal">0</span>
         <input type="range" id="presence" min="-6" max="6" value="0" step="0.5">
       </label>
-      <label>Compression <span id="compVal">0</span>
-        <input type="range" id="comp" min="0" max="10" value="3" step="0.1">
+      <label>Compression <span id="compVal">3</span>
+        <input type="range" id="comp" min="0" max="10" value="4" step="0.1">
       </label>
     </div>
 
-    <button id="processBtn" onclick="processTrack()" disabled>Master Track</button>
-    <button class="install-btn" id="installBtn">Install on Phone</button>
+    <button class="primary" id="processBtn" onclick="processTrack()" disabled>Master Track</button>
 
     <div class="status" id="status"></div>
 
-    <div class="player" id="player" style="display:none;">
-      <h3>Original</h3>
+    <div class="preview" id="preview" style="display:none;">
+      <h3 style="margin-bottom:8px;">A/B Preview</h3>
+      <div class="ab-controls">
+        <button class="orig" id="playOrig">Play Original</button>
+        <button class="mast" id="playMast">Play Mastered</button>
+      </div>
       <audio id="originalAudio" controls></audio>
-      <h3>Mastered</h3>
       <audio id="masteredAudio" controls></audio>
-      <button onclick="downloadMaster()">Download Master</button>
+      <button class="primary" style="margin-top:12px;" onclick="downloadMaster()">Download Mastered WAV</button>
     </div>
 
     <footer>
@@ -99,30 +113,15 @@
   </div>
 
   <script>
-    let audioContext, originalBuffer, processedBuffer;
+    let audioContext, originalBuffer, processedBuffer, originalBlobUrl, masteredBlobUrl;
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('fileInput');
     const processBtn = document.getElementById('processBtn');
     const status = document.getElementById('status');
-    const player = document.getElementById('player');
-    let deferredPrompt;
+    const preview = document.getElementById('preview');
+    const originalAudio = document.getElementById('originalAudio');
+    const masteredAudio = document.getElementById('masteredAudio');
 
-    // PWA Install
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      document.getElementById('installBtn').style.display = 'block';
-    });
-    document.getElementById('installBtn').addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        document.getElementById('installBtn').style.display = 'none';
-      }
-    });
-
-    // File handling
     dropzone.addEventListener('click', () => fileInput.click());
     dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
     dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
@@ -138,24 +137,31 @@
       status.textContent = 'Loading audio...';
       const arrayBuffer = await file.arrayBuffer();
       if (!audioContext) audioContext = new AudioContext();
-      originalBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      document.getElementById('originalAudio').src = URL.createObjectURL(file);
+      originalBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+      if (originalBlobUrl) URL.revokeObjectURL(originalBlobUrl);
+      originalBlobUrl = URL.createObjectURL(file);
+      originalAudio.src = originalBlobUrl;
       processBtn.disabled = false;
+      preview.style.display = 'block';
       status.textContent = `Loaded: ${file.name} (${originalBuffer.duration.toFixed(1)}s)`;
-      player.style.display = 'block';
     }
 
     function applyPreset(name) {
+      document.querySelectorAll('.presets button').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-preset="${name}"]`)?.classList.add('active');
       const presets = {
-        warm: { loudness: 2, bass: 4, treble: -1, presence: 1, comp: 4 },
-        loud: { loudness: 6, bass: 2, treble: 2, presence: 3, comp: 7 },
-        bright: { loudness: 1, bass: -2, treble: 5, presence: 4, comp: 3 },
-        radio: { loudness: 4, bass: 1, treble: 3, presence: 2, comp: 6 },
-        clean: { loudness: 0, bass: 0, treble: 0, presence: 0, comp: 2 }
+        sony:     { loudness: 1.5, bass: 1, mid: 0.5, treble: 1.5, presence: 1, comp: 3.5 },
+        theater:  { loudness: 2, bass: 3, mid: 1, treble: 2, presence: 2, comp: 4 },
+        club:     { loudness: 5, bass: 6, mid: 1, treble: 2, presence: 3, comp: 7 },
+        commercial:{ loudness: 4, bass: 2, mid: 1.5, treble: 3, presence: 2.5, comp: 6 },
+        radio:    { loudness: 4.5, bass: 1, mid: 2, treble: 3.5, presence: 3, comp: 7.5 },
+        live:     { loudness: 2.5, bass: 2, mid: 0.5, treble: 1, presence: 1, comp: 3 }
       };
       const p = presets[name];
+      if (!p) return;
       document.getElementById('loudness').value = p.loudness;
       document.getElementById('bass').value = p.bass;
+      document.getElementById('mid').value = p.mid;
       document.getElementById('treble').value = p.treble;
       document.getElementById('presence').value = p.presence;
       document.getElementById('comp').value = p.comp;
@@ -165,6 +171,7 @@
     function updateLabels() {
       document.getElementById('loudnessVal').textContent = document.getElementById('loudness').value;
       document.getElementById('bassVal').textContent = document.getElementById('bass').value;
+      document.getElementById('midVal').textContent = document.getElementById('mid').value;
       document.getElementById('trebleVal').textContent = document.getElementById('treble').value;
       document.getElementById('presenceVal').textContent = document.getElementById('presence').value;
       document.getElementById('compVal').textContent = document.getElementById('comp').value;
@@ -188,41 +195,71 @@
 
       const bass = offlineCtx.createBiquadFilter();
       bass.type = 'lowshelf';
-      bass.frequency.value = 150;
+      bass.frequency.value = 120;
       bass.gain.value = parseFloat(document.getElementById('bass').value);
+
+      const mid = offlineCtx.createBiquadFilter();
+      mid.type = 'peaking';
+      mid.frequency.value = 800;
+      mid.Q.value = 0.7;
+      mid.gain.value = parseFloat(document.getElementById('mid').value);
 
       const treble = offlineCtx.createBiquadFilter();
       treble.type = 'highshelf';
-      treble.frequency.value = 4000;
+      treble.frequency.value = 4500;
       treble.gain.value = parseFloat(document.getElementById('treble').value);
 
       const presence = offlineCtx.createBiquadFilter();
       presence.type = 'peaking';
-      presence.frequency.value = 2500;
-      presence.Q.value = 1;
+      presence.frequency.value = 2800;
+      presence.Q.value = 1.2;
       presence.gain.value = parseFloat(document.getElementById('presence').value);
 
       const gain = offlineCtx.createGain();
       const loudness = parseFloat(document.getElementById('loudness').value);
       const comp = parseFloat(document.getElementById('comp').value);
-      gain.gain.value = Math.pow(10, (loudness + comp * 0.5) / 20);
+      gain.gain.value = Math.pow(10, (loudness + comp * 0.4) / 20);
+
+      // Soft clip / limiter approximation
+      const limiter = offlineCtx.createWaveShaper();
+      const curve = new Float32Array(256);
+      for (let i = 0; i < 256; i++) {
+        const x = (i / 128) - 1;
+        curve[i] = Math.tanh(x * 1.2) * 0.9;
+      }
+      limiter.curve = curve;
 
       source.connect(bass);
-      bass.connect(treble);
+      bass.connect(mid);
+      mid.connect(treble);
       treble.connect(presence);
       presence.connect(gain);
-      gain.connect(offlineCtx.destination);
+      gain.connect(limiter);
+      limiter.connect(offlineCtx.destination);
 
       source.start();
       processedBuffer = await offlineCtx.startRendering();
 
       const wav = bufferToWav(processedBuffer);
       const blob = new Blob([wav], { type: 'audio/wav' });
-      document.getElementById('masteredAudio').src = URL.createObjectURL(blob);
-      
-      status.textContent = 'Master complete!';
+      if (masteredBlobUrl) URL.revokeObjectURL(masteredBlobUrl);
+      masteredBlobUrl = URL.createObjectURL(blob);
+      masteredAudio.src = masteredBlobUrl;
+
+      status.textContent = 'Master complete — use A/B preview';
       processBtn.disabled = false;
     }
+
+    document.getElementById('playOrig').addEventListener('click', () => {
+      masteredAudio.pause();
+      originalAudio.currentTime = 0;
+      originalAudio.play();
+    });
+    document.getElementById('playMast').addEventListener('click', () => {
+      originalAudio.pause();
+      masteredAudio.currentTime = 0;
+      masteredAudio.play();
+    });
 
     function bufferToWav(buffer) {
       const numChannels = buffer.numberOfChannels;
@@ -266,10 +303,9 @@
     }
 
     function downloadMaster() {
-      const audio = document.getElementById('masteredAudio');
-      if (!audio.src) return;
+      if (!masteredBlobUrl) return;
       const a = document.createElement('a');
-      a.href = audio.src;
+      a.href = masteredBlobUrl;
       a.download = 'MelitiaMaster_Mastered.wav';
       a.click();
     }
