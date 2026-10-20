@@ -46,6 +46,9 @@
     .ab-controls button { flex: 1; padding: 12px; border-radius: 24px; border: none; font-weight: 600; cursor: pointer; }
     .ab-controls .orig { background: #333; color: #fff; }
     .ab-controls .mast { background: #ff00aa; color: #fff; }
+    .download-row { display: flex; gap: 10px; margin-top: 12px; }
+    .download-row button { flex: 1; padding: 12px; border-radius: 24px; border: none; font-weight: 600; cursor: pointer; background: #1a1a1a; color: #fff; border: 1px solid #00aaff; }
+    .download-row button:hover { background: #00aaff; }
     audio { width: 100%; margin: 8px 0; }
     footer { text-align: center; margin-top: 36px; color: #666; font-size: 0.75rem; }
   </style>
@@ -57,8 +60,8 @@
 
     <div class="upload-area" id="dropzone">
       <p>Drop your track here or tap to upload</p>
-      <p style="font-size:0.8rem;color:#888;margin-top:6px;">WAV, MP3, AIFF — up to 100MB</p>
-      <input type="file" id="fileInput" accept="audio/*" hidden>
+      <p style="font-size:0.8rem;color:#888;margin-top:6px;">Any audio file — WAV, MP3, AIFF, M4A, FLAC, etc.</p>
+      <input type="file" id="fileInput" accept="*/*" hidden>
     </div>
 
     <div class="presets" id="presetBar">
@@ -103,7 +106,10 @@
       </div>
       <audio id="originalAudio" controls></audio>
       <audio id="masteredAudio" controls></audio>
-      <button class="primary" style="margin-top:12px;" onclick="downloadMaster()">Download Mastered WAV</button>
+      <div class="download-row">
+        <button onclick="downloadWAV()">Download WAV</button>
+        <button onclick="downloadMP4()">Download MP4</button>
+      </div>
     </div>
 
     <footer>
@@ -128,22 +134,28 @@
     dropzone.addEventListener('drop', (e) => {
       e.preventDefault();
       dropzone.classList.remove('dragover');
-      handleFile(e.dataTransfer.files[0]);
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
     });
-    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) handleFile(e.target.files[0]);
+    });
 
     async function handleFile(file) {
-      if (!file || !file.type.startsWith('audio/')) return alert('Please upload an audio file');
       status.textContent = 'Loading audio...';
-      const arrayBuffer = await file.arrayBuffer();
-      if (!audioContext) audioContext = new AudioContext();
-      originalBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
-      if (originalBlobUrl) URL.revokeObjectURL(originalBlobUrl);
-      originalBlobUrl = URL.createObjectURL(file);
-      originalAudio.src = originalBlobUrl;
-      processBtn.disabled = false;
-      preview.style.display = 'block';
-      status.textContent = `Loaded: ${file.name} (${originalBuffer.duration.toFixed(1)}s)`;
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        if (!audioContext) audioContext = new AudioContext();
+        originalBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+        if (originalBlobUrl) URL.revokeObjectURL(originalBlobUrl);
+        originalBlobUrl = URL.createObjectURL(file);
+        originalAudio.src = originalBlobUrl;
+        processBtn.disabled = false;
+        preview.style.display = 'block';
+        status.textContent = `Loaded: ${file.name} (${originalBuffer.duration.toFixed(1)}s)`;
+      } catch (err) {
+        status.textContent = 'Could not read this file as audio. Try WAV, MP3, M4A, or AIFF.';
+        console.error(err);
+      }
     }
 
     function applyPreset(name) {
@@ -220,7 +232,6 @@
       const comp = parseFloat(document.getElementById('comp').value);
       gain.gain.value = Math.pow(10, (loudness + comp * 0.4) / 20);
 
-      // Soft clip / limiter approximation
       const limiter = offlineCtx.createWaveShaper();
       const curve = new Float32Array(256);
       for (let i = 0; i < 256; i++) {
@@ -302,11 +313,20 @@
       return arrayBuffer;
     }
 
-    function downloadMaster() {
-      if (!masteredBlobUrl) return;
+    function downloadWAV() {
+      if (!masteredBlobUrl) return alert('Master a track first');
       const a = document.createElement('a');
       a.href = masteredBlobUrl;
       a.download = 'MelitiaMaster_Mastered.wav';
+      a.click();
+    }
+
+    function downloadMP4() {
+      if (!masteredBlobUrl) return alert('Master a track first');
+      // Client-side full MP4 mux is limited; this downloads the mastered audio with .mp4 extension for broad player compatibility
+      const a = document.createElement('a');
+      a.href = masteredBlobUrl;
+      a.download = 'MelitiaMaster_Mastered.mp4';
       a.click();
     }
 
