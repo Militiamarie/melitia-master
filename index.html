@@ -64,7 +64,7 @@
 <body>
   <div class="container">
     <h1>Melitia Master</h1>
-    <p class="subtitle">AI Online Mastering • Waves / Sony Style • Theater • Club • Commercial • Radio • Live</p>
+    <p class="subtitle">AI Online Mastering • Waves / Sony Style • Clean & Distortion-Free</p>
 
     <div class="upload-area" id="dropzone">
       <p>Drop your track here or tap to upload</p>
@@ -87,22 +87,22 @@
 
     <div class="controls">
       <label>Loudness <span id="loudnessVal">0</span> dB
-        <input type="range" id="loudness" min="-6" max="10" value="2" step="0.5">
+        <input type="range" id="loudness" min="-6" max="6" value="1" step="0.5">
       </label>
       <label>Bass <span id="bassVal">0</span>
-        <input type="range" id="bass" min="-10" max="10" value="0" step="0.5">
+        <input type="range" id="bass" min="-8" max="8" value="0" step="0.5">
       </label>
       <label>Mid <span id="midVal">0</span>
-        <input type="range" id="mid" min="-8" max="8" value="0" step="0.5">
+        <input type="range" id="mid" min="-6" max="6" value="0" step="0.5">
       </label>
       <label>Treble <span id="trebleVal">0</span>
-        <input type="range" id="treble" min="-10" max="10" value="0" step="0.5">
+        <input type="range" id="treble" min="-8" max="8" value="0" step="0.5">
       </label>
       <label>Presence <span id="presenceVal">0</span>
-        <input type="range" id="presence" min="-6" max="6" value="0" step="0.5">
+        <input type="range" id="presence" min="-5" max="5" value="0" step="0.5">
       </label>
-      <label>Compression <span id="compVal">3</span>
-        <input type="range" id="comp" min="0" max="10" value="4" step="0.1">
+      <label>Compression <span id="compVal">2</span>
+        <input type="range" id="comp" min="0" max="8" value="2" step="0.1">
       </label>
     </div>
 
@@ -125,7 +125,7 @@
     </div>
 
     <footer>
-      Melitia Master • AI Mastering for Artists<br>
+      Melitia Master • Clean AI Mastering • No Distortion<br>
       Built for Melitia Marie • 818
     </footer>
   </div>
@@ -182,12 +182,12 @@
       document.querySelectorAll('.presets button').forEach(b => b.classList.remove('active'));
       document.querySelector(`[data-preset="${name}"]`)?.classList.add('active');
       const presets = {
-        sony:     { loudness: 1.5, bass: 1, mid: 0.5, treble: 1.5, presence: 1, comp: 3.5 },
-        theater:  { loudness: 2, bass: 3, mid: 1, treble: 2, presence: 2, comp: 4 },
-        club:     { loudness: 5, bass: 6, mid: 1, treble: 2, presence: 3, comp: 7 },
-        commercial:{ loudness: 4, bass: 2, mid: 1.5, treble: 3, presence: 2.5, comp: 6 },
-        radio:    { loudness: 4.5, bass: 1, mid: 2, treble: 3.5, presence: 3, comp: 7.5 },
-        live:     { loudness: 2.5, bass: 2, mid: 0.5, treble: 1, presence: 1, comp: 3 }
+        sony:     { loudness: 1, bass: 0.5, mid: 0.3, treble: 1, presence: 0.5, comp: 2 },
+        theater:  { loudness: 1.5, bass: 2, mid: 0.5, treble: 1.5, presence: 1, comp: 2.5 },
+        club:     { loudness: 3, bass: 3.5, mid: 0.5, treble: 1, presence: 1.5, comp: 4 },
+        commercial:{ loudness: 2.5, bass: 1, mid: 1, treble: 2, presence: 1.5, comp: 3.5 },
+        radio:    { loudness: 3, bass: 0.5, mid: 1.5, treble: 2.5, presence: 2, comp: 4 },
+        live:     { loudness: 1.5, bass: 1, mid: 0.3, treble: 0.5, presence: 0.5, comp: 2 }
       };
       const p = presets[name];
       if (!p) return;
@@ -213,7 +213,7 @@
 
     async function processTrack() {
       if (!originalBuffer) return;
-      status.textContent = 'Mastering with AI...';
+      status.textContent = 'Mastering clean...';
       processBtn.disabled = true;
 
       const offlineCtx = new OfflineAudioContext(
@@ -228,48 +228,59 @@
       const bass = offlineCtx.createBiquadFilter();
       bass.type = 'lowshelf';
       bass.frequency.value = 120;
-      bass.gain.value = parseFloat(document.getElementById('bass').value);
+      bass.gain.value = parseFloat(document.getElementById('bass').value) * 0.8;
 
       const mid = offlineCtx.createBiquadFilter();
       mid.type = 'peaking';
       mid.frequency.value = 800;
-      mid.Q.value = 0.7;
-      mid.gain.value = parseFloat(document.getElementById('mid').value);
+      mid.Q.value = 0.6;
+      mid.gain.value = parseFloat(document.getElementById('mid').value) * 0.7;
 
       const treble = offlineCtx.createBiquadFilter();
       treble.type = 'highshelf';
       treble.frequency.value = 4500;
-      treble.gain.value = parseFloat(document.getElementById('treble').value);
+      treble.gain.value = parseFloat(document.getElementById('treble').value) * 0.8;
 
       const presence = offlineCtx.createBiquadFilter();
       presence.type = 'peaking';
       presence.frequency.value = 2800;
-      presence.Q.value = 1.2;
-      presence.gain.value = parseFloat(document.getElementById('presence').value);
+      presence.Q.value = 1;
+      presence.gain.value = parseFloat(document.getElementById('presence').value) * 0.7;
 
       const gain = offlineCtx.createGain();
       const loudness = parseFloat(document.getElementById('loudness').value);
       const comp = parseFloat(document.getElementById('comp').value);
-      gain.gain.value = Math.pow(10, (loudness + comp * 0.4) / 20);
-
-      const limiter = offlineCtx.createWaveShaper();
-      const curve = new Float32Array(256);
-      for (let i = 0; i < 256; i++) {
-        const x = (i / 128) - 1;
-        curve[i] = Math.tanh(x * 1.2) * 0.9;
-      }
-      limiter.curve = curve;
+      // Safer gain: less aggressive, leaves headroom
+      gain.gain.value = Math.pow(10, (loudness + comp * 0.15) / 20) * 0.85;
 
       source.connect(bass);
       bass.connect(mid);
       mid.connect(treble);
       treble.connect(presence);
       presence.connect(gain);
-      gain.connect(limiter);
-      limiter.connect(offlineCtx.destination);
+      gain.connect(offlineCtx.destination);
 
       source.start();
-      processedBuffer = await offlineCtx.startRendering();
+      let rendered = await offlineCtx.startRendering();
+
+      // Safety: measure peak and reduce if needed so it never clips
+      let peak = 0;
+      for (let ch = 0; ch < rendered.numberOfChannels; ch++) {
+        const data = rendered.getChannelData(ch);
+        for (let i = 0; i < data.length; i++) {
+          const abs = Math.abs(data[i]);
+          if (abs > peak) peak = abs;
+        }
+      }
+      if (peak > 0.92) {
+        const scale = 0.92 / peak;
+        for (let ch = 0; ch < rendered.numberOfChannels; ch++) {
+          const data = rendered.getChannelData(ch);
+          for (let i = 0; i < data.length; i++) data[i] *= scale;
+        }
+      }
+
+      processedBuffer = rendered;
 
       const wav = bufferToWav(processedBuffer);
       const blob = new Blob([wav], { type: 'audio/wav' });
@@ -277,7 +288,7 @@
       masteredBlobUrl = URL.createObjectURL(blob);
       masteredAudio.src = masteredBlobUrl;
 
-      status.textContent = 'Master complete — use A/B preview';
+      status.textContent = 'Master complete — clean, no distortion';
       processBtn.disabled = false;
     }
 
