@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Melitia Master — AI Online Mastering</title>
+  <meta name="description" content="Melitia Master — Professional AI-powered online mastering. Like Waves & Sony. Upload, process, download.">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0a; color: #fff; 
+      min-height: 100vh; padding: 20px;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 100%);
+    }
+    .container { max-width: 600px; margin: 0 auto; }
+    h1 { font-size: 2.5rem; text-align: center; margin-bottom: 10px; background: linear-gradient(90deg, #ff00aa, #00aaff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { text-align: center; color: #aaa; margin-bottom: 30px; }
+    .upload-area {
+      border: 2px dashed #ff00aa; border-radius: 16px; padding: 40px 20px;
+      text-align: center; margin-bottom: 20px; background: rgba(255,0,170,0.05);
+      cursor: pointer; transition: all 0.3s;
+    }
+    .upload-area:hover, .upload-area.dragover { background: rgba(255,0,170,0.15); border-color: #00aaff; }
+    .controls { display: grid; gap: 15px; margin: 20px 0; }
+    label { display: flex; justify-content: space-between; font-size: 0.9rem; color: #ccc; }
+    input[type="range"] { width: 60%; }
+    .presets { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 15px 0; }
+    button {
+      background: #ff00aa; color: white; border: none; padding: 12px 24px;
+      border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1rem;
+    }
+    button:hover { background: #ff33bb; }
+    button:disabled { background: #333; cursor: not-allowed; }
+    .player { margin-top: 20px; }
+    audio { width: 100%; margin: 10px 0; }
+    .status { text-align: center; margin: 15px 0; min-height: 24px; color: #00aaff; }
+    .install-btn { display: none; margin: 20px auto; background: #00aaff; }
+    footer { text-align: center; margin-top: 40px; color: #666; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Melitia Master</h1>
+    <p class="subtitle">AI Online Mastering • Waves / Sony Style</p>
+
+    <div class="upload-area" id="dropzone">
+      <p>Drop your track here or tap to upload</p>
+      <p style="font-size:0.8rem;color:#888;margin-top:8px;">WAV, MP3, AIFF — up to 100MB</p>
+      <input type="file" id="fileInput" accept="audio/*" hidden>
+    </div>
+
+    <div class="presets">
+      <button onclick="applyPreset('warm')">Warm</button>
+      <button onclick="applyPreset('loud')">Loud</button>
+      <button onclick="applyPreset('bright')">Bright</button>
+      <button onclick="applyPreset('radio')">Radio</button>
+      <button onclick="applyPreset('clean')">Clean</button>
+    </div>
+
+    <div class="controls">
+      <label>Loudness <span id="loudnessVal">0</span> dB
+        <input type="range" id="loudness" min="-6" max="12" value="0" step="0.5">
+      </label>
+      <label>Bass <span id="bassVal">0</span>
+        <input type="range" id="bass" min="-12" max="12" value="0" step="0.5">
+      </label>
+      <label>Treble <span id="trebleVal">0</span>
+        <input type="range" id="treble" min="-12" max="12" value="0" step="0.5">
+      </label>
+      <label>Presence <span id="presenceVal">0</span>
+        <input type="range" id="presence" min="-6" max="6" value="0" step="0.5">
+      </label>
+      <label>Compression <span id="compVal">0</span>
+        <input type="range" id="comp" min="0" max="10" value="3" step="0.1">
+      </label>
+    </div>
+
+    <button id="processBtn" onclick="processTrack()" disabled>Master Track</button>
+    <button class="install-btn" id="installBtn">Install on Phone</button>
+
+    <div class="status" id="status"></div>
+
+    <div class="player" id="player" style="display:none;">
+      <h3>Original</h3>
+      <audio id="originalAudio" controls></audio>
+      <h3>Mastered</h3>
+      <audio id="masteredAudio" controls></audio>
+      <button onclick="downloadMaster()">Download Master</button>
+    </div>
+
+    <footer>
+      Melitia Master • AI Mastering for Artists<br>
+      Built for Melitia Marie • 818
+    </footer>
+  </div>
+
+  <script>
+    let audioContext, originalBuffer, processedBuffer;
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const processBtn = document.getElementById('processBtn');
+    const status = document.getElementById('status');
+    const player = document.getElementById('player');
+    let deferredPrompt;
+
+    // PWA Install
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installBtn').style.display = 'block';
+    });
+    document.getElementById('installBtn').addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        document.getElementById('installBtn').style.display = 'none';
+      }
+    });
+
+    // File handling
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+    async function handleFile(file) {
+      if (!file || !file.type.startsWith('audio/')) return alert('Please upload an audio file');
+      status.textContent = 'Loading audio...';
+      const arrayBuffer = await file.arrayBuffer();
+      if (!audioContext) audioContext = new AudioContext();
+      originalBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      document.getElementById('originalAudio').src = URL.createObjectURL(file);
+      processBtn.disabled = false;
+      status.textContent = `Loaded: ${file.name} (${originalBuffer.duration.toFixed(1)}s)`;
+      player.style.display = 'block';
+    }
+
+    function applyPreset(name) {
+      const presets = {
+        warm: { loudness: 2, bass: 4, treble: -1, presence: 1, comp: 4 },
+        loud: { loudness: 6, bass: 2, treble: 2, presence: 3, comp: 7 },
+        bright: { loudness: 1, bass: -2, treble: 5, presence: 4, comp: 3 },
+        radio: { loudness: 4, bass: 1, treble: 3, presence: 2, comp: 6 },
+        clean: { loudness: 0, bass: 0, treble: 0, presence: 0, comp: 2 }
+      };
+      const p = presets[name];
+      document.getElementById('loudness').value = p.loudness;
+      document.getElementById('bass').value = p.bass;
+      document.getElementById('treble').value = p.treble;
+      document.getElementById('presence').value = p.presence;
+      document.getElementById('comp').value = p.comp;
+      updateLabels();
+    }
+
+    function updateLabels() {
+      document.getElementById('loudnessVal').textContent = document.getElementById('loudness').value;
+      document.getElementById('bassVal').textContent = document.getElementById('bass').value;
+      document.getElementById('trebleVal').textContent = document.getElementById('treble').value;
+      document.getElementById('presenceVal').textContent = document.getElementById('presence').value;
+      document.getElementById('compVal').textContent = document.getElementById('comp').value;
+    }
+    document.querySelectorAll('input[type="range"]').forEach(el => el.addEventListener('input', updateLabels));
+    updateLabels();
+
+    async function processTrack() {
+      if (!originalBuffer) return;
+      status.textContent = 'Mastering with AI...';
+      processBtn.disabled = true;
+
+      const offlineCtx = new OfflineAudioContext(
+        originalBuffer.numberOfChannels,
+        originalBuffer.length,
+        originalBuffer.sampleRate
+      );
+
+      const source = offlineCtx.createBufferSource();
+      source.buffer = originalBuffer;
+
+      const bass = offlineCtx.createBiquadFilter();
+      bass.type = 'lowshelf';
+      bass.frequency.value = 150;
+      bass.gain.value = parseFloat(document.getElementById('bass').value);
+
+      const treble = offlineCtx.createBiquadFilter();
+      treble.type = 'highshelf';
+      treble.frequency.value = 4000;
+      treble.gain.value = parseFloat(document.getElementById('treble').value);
+
+      const presence = offlineCtx.createBiquadFilter();
+      presence.type = 'peaking';
+      presence.frequency.value = 2500;
+      presence.Q.value = 1;
+      presence.gain.value = parseFloat(document.getElementById('presence').value);
+
+      const gain = offlineCtx.createGain();
+      const loudness = parseFloat(document.getElementById('loudness').value);
+      const comp = parseFloat(document.getElementById('comp').value);
+      gain.gain.value = Math.pow(10, (loudness + comp * 0.5) / 20);
+
+      source.connect(bass);
+      bass.connect(treble);
+      treble.connect(presence);
+      presence.connect(gain);
+      gain.connect(offlineCtx.destination);
+
+      source.start();
+      processedBuffer = await offlineCtx.startRendering();
+
+      const wav = bufferToWav(processedBuffer);
+      const blob = new Blob([wav], { type: 'audio/wav' });
+      document.getElementById('masteredAudio').src = URL.createObjectURL(blob);
+      
+      status.textContent = 'Master complete!';
+      processBtn.disabled = false;
+    }
+
+    function bufferToWav(buffer) {
+      const numChannels = buffer.numberOfChannels;
+      const sampleRate = buffer.sampleRate;
+      const format = 1;
+      const bitDepth = 16;
+      const samples = buffer.length;
+      const blockAlign = numChannels * bitDepth / 8;
+      const byteRate = sampleRate * blockAlign;
+      const dataSize = samples * blockAlign;
+      const bufferSize = 44 + dataSize;
+      const arrayBuffer = new ArrayBuffer(bufferSize);
+      const view = new DataView(arrayBuffer);
+
+      const writeString = (offset, string) => {
+        for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+      };
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, format, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, byteRate, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitDepth, true);
+      writeString(36, 'data');
+      view.setUint32(40, dataSize, true);
+
+      let offset = 44;
+      for (let i = 0; i < samples; i++) {
+        for (let ch = 0; ch < numChannels; ch++) {
+          const sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+          view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+          offset += 2;
+        }
+      }
+      return arrayBuffer;
+    }
+
+    function downloadMaster() {
+      const audio = document.getElementById('masteredAudio');
+      if (!audio.src) return;
+      const a = document.createElement('a');
+      a.href = audio.src;
+      a.download = 'MelitiaMaster_Mastered.wav';
+      a.click();
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
