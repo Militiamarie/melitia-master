@@ -39,6 +39,14 @@
     }
     button.primary:disabled { background: #333; cursor: not-allowed; }
     .status { text-align: center; margin: 12px 0; min-height: 22px; color: #00aaff; font-size: 0.95rem; }
+    .original-play {
+      margin: 12px 0; display: none;
+    }
+    .original-play button {
+      width: 100%; padding: 14px; border-radius: 30px; border: none; font-weight: bold;
+      background: #333; color: #fff; cursor: pointer; font-size: 1rem;
+    }
+    .original-play button:hover { background: #444; }
     .preview {
       margin-top: 20px; background: rgba(255,255,255,0.03); border-radius: 16px; padding: 16px;
     }
@@ -62,6 +70,10 @@
       <p>Drop your track here or tap to upload</p>
       <p style="font-size:0.8rem;color:#888;margin-top:6px;">Any audio file — WAV, MP3, AIFF, M4A, FLAC, etc.</p>
       <input type="file" id="fileInput" accept="*/*" hidden>
+    </div>
+
+    <div class="original-play" id="originalPlaySection">
+      <button id="playOriginalNow">Play Original</button>
     </div>
 
     <div class="presets" id="presetBar">
@@ -125,6 +137,7 @@
     const processBtn = document.getElementById('processBtn');
     const status = document.getElementById('status');
     const preview = document.getElementById('preview');
+    const originalPlaySection = document.getElementById('originalPlaySection');
     const originalAudio = document.getElementById('originalAudio');
     const masteredAudio = document.getElementById('masteredAudio');
 
@@ -150,6 +163,7 @@
         originalBlobUrl = URL.createObjectURL(file);
         originalAudio.src = originalBlobUrl;
         processBtn.disabled = false;
+        originalPlaySection.style.display = 'block';
         preview.style.display = 'block';
         status.textContent = `Loaded: ${file.name} (${originalBuffer.duration.toFixed(1)}s)`;
       } catch (err) {
@@ -157,6 +171,12 @@
         console.error(err);
       }
     }
+
+    document.getElementById('playOriginalNow').addEventListener('click', () => {
+      if (masteredAudio) masteredAudio.pause();
+      originalAudio.currentTime = 0;
+      originalAudio.play();
+    });
 
     function applyPreset(name) {
       document.querySelectorAll('.presets button').forEach(b => b.classList.remove('active'));
@@ -323,7 +343,6 @@
 
     function downloadMP4() {
       if (!masteredBlobUrl) return alert('Master a track first');
-      // Client-side full MP4 mux is limited; this downloads the mastered audio with .mp4 extension for broad player compatibility
       const a = document.createElement('a');
       a.href = masteredBlobUrl;
       a.download = 'MelitiaMaster_Mastered.mp4';
