@@ -48,17 +48,17 @@
     #fileInput { display: none; }
     .file-name { margin-top: 12px; font-size: 13px; color: var(--muted); word-break: break-all; }
     .file-name.has { color: var(--text); }
-    .presets { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .preset {
       border: 1px solid var(--line); background: transparent; color: var(--muted);
-      border-radius: 12px; padding: 12px 8px; font-size: 13px; font-weight: 600;
-      cursor: pointer; -webkit-appearance: none;
+      border-radius: 12px; padding: 12px 10px; font-size: 13px; font-weight: 600;
+      cursor: pointer; -webkit-appearance: none; text-align: left;
     }
     .preset.active {
       border-color: var(--gold); color: var(--gold);
       background: rgba(212,160,23,0.12);
     }
-    .preset small { display: block; font-weight: 400; font-size: 11px; margin-top: 4px; opacity: 0.8; }
+    .preset small { display: block; font-weight: 400; font-size: 11px; margin-top: 4px; opacity: 0.85; line-height: 1.3; }
     .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
     .toggle {
       border: 1px solid var(--line); background: transparent; color: var(--muted);
@@ -94,7 +94,7 @@
 <body>
   <header>
     <div class="wordmark">Melitia Master</div>
-    <div class="tag">Waves-style presets · iPad</div>
+    <div class="tag">presets · iPad · offline</div>
   </header>
 
   <div class="card">
@@ -108,26 +108,13 @@
   </div>
 
   <div class="card">
-    <label class="section">Style</label>
-    <div class="presets">
-      <button type="button" class="preset active" data-style="Precise">
-        Precise
-        <small>Clear · stream</small>
-      </button>
-      <button type="button" class="preset" data-style="Organic">
-        Organic
-        <small>Gentle · open</small>
-      </button>
-      <button type="button" class="preset" data-style="Elevated">
-        Elevated
-        <small>Loud · push</small>
-      </button>
-    </div>
+    <label class="section">Preset</label>
+    <div class="presets" id="presetGrid"></div>
     <div class="toggles">
       <button type="button" class="toggle" id="depthBtn">Depth</button>
       <button type="button" class="toggle" id="presenceBtn">Presence</button>
     </div>
-    <p class="hint" id="presetHint">Precise: balanced clarity, moderate glue, streaming loudness.</p>
+    <p class="hint" id="presetHint"></p>
   </div>
 
   <button class="primary" id="masterBtn" disabled>Master it</button>
@@ -139,28 +126,84 @@
   <script>
     const PRESETS = {
       Precise: {
+        label: "Precise",
+        blurb: "Clear · stream-ready",
         eq_gain_high: 1.2,
         eq_gain_low: 0.5,
         comp_threshold: -16,
         comp_ratio: 1.5,
         limiter_boost: 4.5,
-        hint: "Precise: balanced clarity, moderate glue, streaming loudness."
+        hint: "Balanced clarity and moderate glue. Good default for streaming."
       },
       Organic: {
+        label: "Organic",
+        blurb: "Gentle · open dynamics",
         eq_gain_high: 0.0,
         eq_gain_low: 0.0,
         comp_threshold: -20,
         comp_ratio: 1.2,
         limiter_boost: 2.5,
-        hint: "Organic: light touch. Keeps your mix dynamics."
+        hint: "Light touch. Keeps the life in your mix."
       },
       Elevated: {
+        label: "Elevated",
+        blurb: "Loud · commercial push",
         eq_gain_high: 2.2,
         eq_gain_low: 1.5,
         comp_threshold: -12,
         comp_ratio: 2.0,
         limiter_boost: 6.0,
-        hint: "Elevated: harder compression and commercial loudness."
+        hint: "Harder compression and maximum commercial volume."
+      },
+      Vocal: {
+        label: "Vocal Glow",
+        blurb: "Forward · airy top",
+        eq_gain_high: 2.8,
+        eq_gain_low: 0.3,
+        comp_threshold: -14,
+        comp_ratio: 1.8,
+        limiter_boost: 4.0,
+        hint: "Lifts the voice and opens the top. Strong for hooks and features."
+      },
+      Bass: {
+        label: "808 Weight",
+        blurb: "Low end · street body",
+        eq_gain_high: 0.6,
+        eq_gain_low: 2.8,
+        comp_threshold: -15,
+        comp_ratio: 1.6,
+        limiter_boost: 4.0,
+        hint: "Pushes sub and low mids. Built for 808-heavy and trap mixes."
+      },
+      Radio: {
+        label: "Radio Punch",
+        blurb: "Tight · mid focus",
+        eq_gain_high: 1.0,
+        eq_gain_low: 0.8,
+        comp_threshold: -11,
+        comp_ratio: 2.4,
+        limiter_boost: 5.5,
+        hint: "Tighter glue and mid punch so it cuts on small speakers."
+      },
+      Night: {
+        label: "Night Drive",
+        blurb: "Warm · soft ceiling",
+        eq_gain_high: 0.8,
+        eq_gain_low: 1.2,
+        comp_threshold: -18,
+        comp_ratio: 1.4,
+        limiter_boost: 3.0,
+        hint: "Warm and smooth. Lower loudness, more vibe."
+      },
+      Raw: {
+        label: "Raw Street",
+        blurb: "Minimal · grit kept",
+        eq_gain_high: 0.4,
+        eq_gain_low: 0.6,
+        comp_threshold: -22,
+        comp_ratio: 1.15,
+        limiter_boost: 1.8,
+        hint: "Almost transparent. Just enough polish without cleaning the edge."
       }
     };
 
@@ -171,6 +214,7 @@
     let masterBlob = null;
     let masterUrl = null;
 
+    const grid = document.getElementById("presetGrid");
     const dropZone = document.getElementById("dropZone");
     const fileInput = document.getElementById("fileInput");
     const fileName = document.getElementById("fileName");
@@ -182,19 +226,27 @@
     const presenceBtn = document.getElementById("presenceBtn");
     const presetHint = document.getElementById("presetHint");
 
+    Object.keys(PRESETS).forEach((key) => {
+      const p = PRESETS[key];
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "preset" + (key === style ? " active" : "");
+      btn.dataset.style = key;
+      btn.innerHTML = p.label + "<small>" + p.blurb + "</small>";
+      btn.onclick = () => {
+        document.querySelectorAll(".preset").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        style = key;
+        presetHint.textContent = p.hint;
+      };
+      grid.appendChild(btn);
+    });
+    presetHint.textContent = PRESETS[style].hint;
+
     function setStatus(msg, kind) {
       statusEl.textContent = msg;
       statusEl.className = "status" + (kind ? " " + kind : "");
     }
-
-    document.querySelectorAll(".preset").forEach((btn) => {
-      btn.onclick = () => {
-        document.querySelectorAll(".preset").forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        style = btn.dataset.style;
-        presetHint.textContent = PRESETS[style].hint;
-      };
-    });
 
     depthBtn.onclick = () => {
       depthOn = !depthOn;
@@ -241,7 +293,8 @@
     masterBtn.onclick = async () => {
       if (!audioBuffer) return;
       masterBtn.disabled = true;
-      setStatus("Mastering · " + style + (depthOn ? " + Depth" : "") + (presenceOn ? " + Presence" : "") + "…");
+      const name = PRESETS[style].label;
+      setStatus("Mastering · " + name + (depthOn ? " + Depth" : "") + (presenceOn ? " + Presence" : "") + "…");
       try {
         const cfg = PRESETS[style];
         let high = cfg.eq_gain_high;
@@ -264,7 +317,7 @@
         player.src = masterUrl;
         player.classList.remove("hidden");
         downloadBtn.classList.remove("hidden");
-        setStatus("Done · " + style + (depthOn ? " · Depth" : "") + (presenceOn ? " · Presence" : ""), "ok");
+        setStatus("Done · " + name + (depthOn ? " · Depth" : "") + (presenceOn ? " · Presence" : ""), "ok");
       } catch (e) {
         setStatus("Master failed.\n" + e.message, "err");
       } finally {
@@ -285,10 +338,8 @@
       const len = buffer.length;
       const ch = buffer.numberOfChannels;
       const offline = new OfflineAudioContext(ch, len, sr);
-
       const source = offline.createBufferSource();
       source.buffer = buffer;
-
       let node = source;
 
       if (opts.lowDb !== 0) {
@@ -299,7 +350,6 @@
         node.connect(lowShelf);
         node = lowShelf;
       }
-
       if (opts.highDb !== 0) {
         const highShelf = offline.createBiquadFilter();
         highShelf.type = "highshelf";
