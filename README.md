@@ -14,6 +14,7 @@ PWA files: `manifest.json` (name, start_url/scope `./`, standalone, icons incl. 
 (precache app shell; network-first for the page with offline fallback; stale-while-revalidate for other assets;
 bump `VERSION` on each release), `icons/` (192/512, maskable 192/512, apple-touch-icon 180, favicon 32).
 No build step: everything (UI + audio engine) lives in `index.html`, plain HTML/CSS/vanilla JS + Web Audio API.
+Tests: see `tests/README.md` (headless Chrome, offline render checks).
 
 ## Mastering
 - Upload WAV / MP3 / M4A / FLAC / AIFF (decoded in the browser, nothing is uploaded to a server).
@@ -22,6 +23,81 @@ No build step: everything (UI + audio engine) lives in `index.html`, plain HTML/
 - Chain: peak-normalize → low/high shelf EQ → gentle compressor → makeup gain (≤ 3 dB) → soft tanh ceiling at −1 dBFS → 16-bit WAV.
 - iOS-safe download (Share sheet → Save to Files, with open-in-tab fallback).
 
+## Smart Master (clean, analysis-driven mastering)
+Tap **Smart Master** (pick **Subtle −14 / Balanced −11 / Loud −9 LUFS** first) or **Analyze & set up only**.
+It listens to the whole mix *before* touching it, shows **What I found / What I'll fix**, sets the studio cards
+below with small capped moves, then renders. Every card stays editable afterwards (tweak, then **Master it**).
+
+**What it measures** (offline, in the browser): spectral balance in 6 broad bands vs a reference
+modern pop / hip-hop long-term curve, integrated LUFS, true peak, PLR / crest factor, LRA, harshness (2–8 kHz),
+sibilance (5–10 kHz), mud (200–500 Hz), low-end mono / phase correlation (< 120 Hz) and full-band correlation,
+DC offset, clipped runs in the source file, and 50/60 Hz mains hum (tonal + harmonic, present through quiet parts).
+Long songs are analysed from 12 × 5 s excerpts spread across the track so it stays fast on an iPad.
+
+**How it decides (never over-process):** corrective EQ moves are ≤ ±3 dB (≤ ±2 dB on Subtle), only where the mix
+is > 1 dB off the reference, the mud band is never boosted, the sub is never boosted when there's no real sub content,
+air/presence boosts are capped lower. Dynamic EQ / de-esser thresholds come from the song's own detector statistics
+*and* the reference, so they only act on moments that stand out; if nothing stands out they stay off.
+Multiband and glue thresholds are set from the song's level distribution for ~1–2 dB of gain reduction.
+After the limiter, if the average limiting would exceed the intensity's budget (0.8 / 1.5 / 3 dB), it backs the
+loudness target off (bisection on the excerpts) and tells you: *"held back from −9 to stay clean"*.
+Smart Master switches the preset stage **off** (its tanh soft-clip is a coloured sound) and keeps **Saturation off**.
+
+**Why there's no "AI" shimmer / warble:** nothing on the audio path works in the FFT/spectral domain — no spectral
+denoise or gating, no phase vocoder / pitch processing, no resynthesis, no waveshaping. The chain is only broad
+minimum-phase IIR filters plus smooth gain: every gain-reduction signal goes through attack/release **and** a second
+one-pole stage (C1-continuous, no zipper), applied per sample. Saturation (the only nonlinearity in the app) stays
+optional, 4× oversampled, and off in Smart Master.
+
+### Studio chain (Waves-style processors — original code)
+> **About Waves:** Waves Audio has no web SDK, and Waves plugins (VST/AU/AAX) cannot run inside a browser or web app.
+> These are **original in-browser processors written for this app**, modelled on the *kind* of studio tools big
+> mastering rooms use. They contain no Waves, SSL or other third-party code, and this project is not affiliated with
+> or endorsed by Waves Audio Ltd. or Solid State Logic; names are only used to describe the style.
+
+Signal flow (export and live preview are the same; any card that is **Off** is bypassed completely):
+```
+mix → EQ → Saturation → Space FX → Immersive → preset master (optional) → Clean-Up → Mono Bass → Corrective EQ
+    → Dynamic EQ → De-esser → Multiband → Glue Comp → Loudness Auto-Master + Ultra Limiter → Dither → Meter → WAV
+```
+
+| Card | What it does |
+|---|---|
+| **Smart Master** | Analysis + one-tap master, Subtle / Balanced / Loud, found/fix readout. |
+| **Preset stage** toggle | ON = the original preset master (shelves, compressor, tanh soft ceiling). OFF = clean path (peak-normalise only). Smart turns it off. |
+| **Clean-Up** | 3 Hz DC blocker, 4th-order Butterworth high-pass at 18 Hz (−0.2 dB at 30 Hz), optional cut-only notches at 50 or 60 Hz + 2 harmonics (Q 25) when hum is detected. |
+| **Mono Bass** | Side channel high-passed by a Linkwitz-Riley 4th-order filter (default 120 Hz, same LR4 approach as the immersive stage): everything below is mono, the mid is untouched. |
+| **Corrective EQ** | 6 broad min-phase bands — Sub shelf 50 Hz, bells (Q 0.7) at 120 / 350 / 1 k / 3.5 k, Air shelf 12 kHz. No narrow resonant boosts. Curve display. ±6 dB manual, Smart ≤ ±3 dB. |
+| **Dynamic EQ** | Mud (default 300 Hz) and harshness (default 4 kHz) bands. Each detects its band level *relative to the full mix* and only cuts while it's above the threshold (soft knee, 3:1, smooth attack/release, cut capped at Max cut; 0 = band off). Implemented as `x − k·bandpass(x)` so the cut is a smooth bell with no coefficient switching. |
+| **De-esser** | Same split-band structure at 5–10 kHz (default 7 kHz), fast 1.5 ms / 60 ms, 4:1, cut capped (Smart 4–6 dB). |
+| **Multiband Comp** | 3 bands, LR4 crossovers (default 120 Hz / 2.5 kHz) with all-pass compensation on the low band so the bands sum to a flat all-pass (phase-coherent). Stereo-linked RMS detection, soft knee, low 30/300 ms, mid 15/200 ms, high 6/120 ms, GR soft-capped at 6 dB. |
+| **Glue Comp (SSL-style)** | Stereo-linked bus compressor, 90 Hz sidechain high-pass, ratio 1.5/2/4, attack 0.1–30 ms (default 30), **Auto** dual-time-constant release (120 ms + 1.5 s program-dependent) or fixed 0.1–1.2 s, GR smoothly capped at **Max GR** (Smart ≤ 2 dB), Mix. |
+| **Ultra Limiter (L2-style)** | Transparent true-peak brickwall: 4× oversampled true-peak detection, 3 ms lookahead with two cascaded box smoothers (S-shaped attack that still guarantees the gain is reached before the peak), dual-stage **Auto** release (fast recovery after isolated hits, slow under sustained limiting = no pumping) or Fast / Slow. Ceiling −1.0 / −1.5 / −2.0 dBTP. With Auto-Master on it replaces Auto-Master's limiter; alone it only catches peaks. |
+| **Dither** | TPDF (±1 LSB triangular) before rounding to 16-bit; fixed seed so exports are repeatable. |
+
+Live preview runs the studio chain in an `AudioWorklet` (`mm-studio`, same DSP source; ScriptProcessor fallback).
+
+### Verification (headless Chrome 156, 48 kHz, test signals: pink noise, log sine sweep, drum loop, sibilant noise bursts)
+- **Null test:** with every new card off, exports are **byte-identical** (SHA-256 of the WAV) to the previous release
+  for: default preset, Auto-Master −14, EQ + Immersive Wide + Auto-Master, Auto-Master −9 with meter off.
+- **Loudness / peaks:** all Smart runs and fixed targets (−14 / −11 / −9 with every studio card on) land within
+  **±0.13 LU** of the target actually used, true peak **−1.1 dBTP** (≤ −1), sample peak ≤ −1.1 dBFS, no NaN/Inf.
+- **Aliasing:** 1 kHz + 15 kHz tones through Smart **Loud**: worst spurious component **−126 dB** below the tone,
+  nothing above 16 kHz (−150 dB).
+- **Artifacts / warble:** 5-tone signal through Smart Balanced, residual after least-squares gain/phase match of the
+  tones = **−92.8 dB** (no sidebands, no musical noise). Pink noise through Smart Loud: per-bin temporal spread
+  5.57 dB in → 5.59 dB out (Δ 0.01 dB; spectral gating / "musical noise" would raise this). Gain-reduction traces of
+  every dynamic stage: max slew ≤ 0.4 dB/ms, no steps (no zipper).
+- Page loads with no console errors; live preview runs the studio worklet.
+
+### Smart Master limitations
+- The reference curve is one generic pop/hip-hop target; for very different genres (acoustic, classical, EDM sub-heavy)
+  treat the EQ suggestions as a starting point.
+- It can't undo clipping, bad mix balance or noise baked into the mix; it reports clipping and keeps the limiter gentle.
+- No noise reduction beyond the sub-20 Hz filter and hum notches, on purpose (spectral denoise causes the "AI" sound).
+- A 4-minute song takes ~25 s to Smart-master on a desktop browser; expect roughly 1 minute on an iPad.
+- Preview is an approximation; the export numbers are exact.
+
 ## Tools / Chain
 Five tools, each in its own card with an On/Off toggle (cards collapse; tap the title).
 
@@ -29,7 +105,7 @@ Five tools, each in its own card with an On/Off toggle (cards collapse; tap the 
 
 ```
 your mix → EQ → Saturation → Space FX → Immersive → preset master (shelves/comp/soft ceiling)
-        → Loudness Auto-Master (LUFS gain + true-peak limiter) → Loudness Meter (read-only) → WAV / speakers
+        → [studio chain, see Smart Master] → Loudness Auto-Master (LUFS gain + true-peak limiter) → Loudness Meter (read-only) → WAV / speakers
 ```
 
 Why this order: EQ/saturation/FX are *creative* tools, so they shape the raw mix before it is spatialised;
@@ -57,7 +133,7 @@ of every target with true peak ≤ −1 dBTP; Space FX stays bounded and decays 
 
 ### Tools limitations
 - “Inspired by” only: this project is **not affiliated with or endorsed by** Tokyo Dawn Records (TDR), Valhalla DSP, Softube, LANDR or Youlean. Their names are used only to describe the style of tool; none of their code or DSP is used.
-- EQ is static (no dynamic EQ bands like Nova). Web Audio shelves ignore Q.
+- The creative EQ is static (dynamic bands live in the separate Dynamic EQ card). Web Audio shelves ignore Q.
 - Space FX is an algorithmic approximation (FDN + modulated delays), not a recreation of any commercial algorithm; there is no true pitch-shifter (the “pitch drift” comes from delay modulation, a few cents). Feedback is mapped to a decay time (max ≈ 15 s), so tails always die out; exports get extra length for the tail.
 - Live preview is an approximation of the export: immersive gain matching, the preset master, and the auto-master gain are adaptive in realtime but exact (measured) in the export. Trust the export numbers.
 - Mono files are measured as dual-mono (as most meters/streaming services do), i.e. ~3 dB higher than strict single-channel BS.1770.
