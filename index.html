@@ -49,6 +49,38 @@ button.ghost{width:100%;border:1px solid var(--line);border-radius:14px;padding:
 .slider-row output{text-align:right;color:var(--text);font-variant-numeric:tabular-nums}
 .slider-row input[type=range]{width:100%;accent-color:var(--gold);height:28px}
 #immPreviewBtn{margin-top:12px}
+.chain-flow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:11px;color:var(--muted)}
+.chain-flow span{border:1px solid var(--line);border-radius:999px;padding:3px 8px;color:var(--text);background:rgba(0,0,0,.3)}
+#chainPreviewBtn{margin-top:12px}
+details.tool>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer}
+details.tool>summary::-webkit-details-marker{display:none}
+details.tool[open]>summary{margin-bottom:12px}
+.tool-title{font-size:15px;font-weight:700;color:var(--text)}
+.tool-title small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:3px}
+.tool-toggle{min-width:64px;padding:8px 12px}
+.eq-canvas,.meter-canvas{width:100%;height:auto;display:block;border-radius:12px;border:1px solid var(--line);touch-action:none;background:#000}
+.band-tabs{display:flex;gap:6px;margin:10px 0}
+.band-tab{flex:1;border:2px solid var(--line);background:rgba(0,0,0,.3);color:var(--muted);border-radius:10px;padding:8px 0;font-weight:700;-webkit-appearance:none}
+.band-tab.active{color:#000;background:var(--gold)}
+.eq-editor{display:grid;gap:8px}
+.slider-row select{width:100%;background:#000;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px;font-size:14px}
+.slider-row.num{grid-template-columns:96px 1fr 70px}
+.slider-row input[type=number]{width:100%;background:#000;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px;font-size:14px}
+button.ghost.small{padding:9px;font-size:13px}
+.knob-wrap{display:flex;flex-direction:column;align-items:center;margin:4px 0 8px}
+.knob{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#57534e,#1c1917 70%);border:3px solid var(--gold);box-shadow:0 0 22px rgba(212,160,23,.35);position:relative;touch-action:none;cursor:ns-resize}
+.knob-ind{position:absolute;left:50%;top:8px;width:6px;height:30px;margin-left:-3px;border-radius:3px;background:var(--gold)}
+.knob-label{font-size:11px;letter-spacing:.2em;color:var(--muted);margin-top:8px}
+.fx-grid{grid-template-columns:1fr 1fr}
+.meter-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.mcell{border:1px solid var(--line);border-radius:10px;padding:8px;background:rgba(0,0,0,.3);text-align:center}
+.mcell span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.mcell b{font-size:20px;font-variant-numeric:tabular-nums}
+.mcell.big b{color:var(--gold);font-size:24px}
+.mcell.over b{color:#fca5a5}
+.meter-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font-size:12px;color:var(--muted)}
+.meter-foot button{width:auto}
+#meterBody.dim{opacity:.4}
 </style>
 </head>
 <body>
@@ -77,6 +109,51 @@ button.ghost{width:100%;border:1px solid var(--line);border-radius:14px;padding:
 <p class="hint" id="immHint"></p>
 <p class="hint">In-browser spatial approximation (Web Audio HRTF virtual speakers). Not certified Dolby Atmos; no Dolby SDK. Exports a stereo/binaural WAV — use headphones for Binaural/Immersive.</p>
 <button type="button" class="ghost" id="immPreviewBtn">Live preview</button></div>
+<div class="card chain-card" id="chainCard"><label class="section">Tools / Chain</label>
+<div class="chain-flow"><span>EQ</span>→<span>Saturation</span>→<span>Space FX</span>→<span>Immersive</span>→<span>Preset master</span>→<span>Loudness</span>→<span>Meter</span></div>
+<p class="hint">Tools run first (on your raw mix), then immersive, then the preset mastering above, then loudness normalisation + true-peak limiting last so the LUFS target and −1 dBTP ceiling hold. The meter only reads. Same order in live preview and export.</p>
+<button type="button" class="ghost" id="chainPreviewBtn">Preview chain</button></div>
+<details class="card tool" id="eqCard" open><summary><span class="tool-title">Parametric EQ<small>5 bands · Nova-style curve · drag the dots</small></span><button type="button" class="toggle tool-toggle" id="eqToggle">Off</button></summary>
+<canvas id="eqCanvas" class="eq-canvas" width="600" height="240" aria-label="EQ response curve. Drag a band dot to change frequency and gain."></canvas>
+<div class="band-tabs" id="eqBandTabs"></div>
+<div class="eq-editor">
+<div class="slider-row"><label for="eqType">Type</label><select id="eqType"><option value="lowshelf">Low shelf</option><option value="peaking">Bell</option><option value="highshelf">High shelf</option><option value="notch">Notch</option><option value="highpass">High-pass</option><option value="lowpass">Low-pass</option></select><span></span></div>
+<div class="slider-row num"><label for="eqFreq">Freq (Hz)</label><input type="range" id="eqFreq" min="0" max="1000" step="1" value="500" /><input type="number" id="eqFreqN" min="20" max="20000" step="1" inputmode="decimal" /></div>
+<div class="slider-row num"><label for="eqGain">Gain (dB)</label><input type="range" id="eqGain" min="-18" max="18" step="0.1" value="0" /><input type="number" id="eqGainN" min="-18" max="18" step="0.1" inputmode="decimal" /></div>
+<div class="slider-row num"><label for="eqQ">Q</label><input type="range" id="eqQ" min="0.1" max="10" step="0.01" value="1" /><input type="number" id="eqQN" min="0.1" max="18" step="0.01" inputmode="decimal" /></div>
+<button type="button" class="ghost small" id="eqReset">Flatten EQ</button></div></details>
+<details class="card tool" id="satCard"><summary><span class="tool-title">Saturation<small>one big knob · tanh · 4× oversampled</small></span><button type="button" class="toggle tool-toggle" id="satToggle">Off</button></summary>
+<div class="knob-wrap"><div class="knob" id="satKnob" role="slider" tabindex="0" aria-label="Drive" aria-valuemin="0" aria-valuemax="100"><div class="knob-ind"></div></div><div class="knob-label">DRIVE</div></div>
+<div class="sliders">
+<div class="slider-row"><label for="satDrive">Drive</label><input type="range" id="satDrive" min="0" max="100" step="1" /><output id="satDrive_v"></output></div>
+<div class="slider-row"><label for="satTone">Tone</label><input type="range" id="satTone" min="-100" max="100" step="1" /><output id="satTone_v"></output></div>
+<div class="slider-row"><label for="satMix">Mix</label><input type="range" id="satMix" min="0" max="100" step="1" /><output id="satMix_v"></output></div>
+</div><p class="hint">Level-matched: more drive = more harmonics, not just louder.</p></details>
+<details class="card tool" id="fxCard"><summary><span class="tool-title">Space FX<small>lush delay / reverb · Supermassive-style</small></span><button type="button" class="toggle tool-toggle" id="fxToggle">Off</button></summary>
+<div class="presets fx-grid" id="fxModeGrid"></div>
+<div class="sliders">
+<div class="slider-row"><label for="fxMix">Mix</label><input type="range" id="fxMix" min="0" max="100" step="1" /><output id="fxMix_v"></output></div>
+<div class="slider-row"><label for="fxFeedback">Feedback</label><input type="range" id="fxFeedback" min="0" max="100" step="1" /><output id="fxFeedback_v"></output></div>
+<div class="slider-row"><label for="fxTime">Time / size</label><input type="range" id="fxTime" min="0" max="100" step="1" /><output id="fxTime_v"></output></div>
+<div class="slider-row"><label for="fxMod">Mod / drift</label><input type="range" id="fxMod" min="0" max="100" step="1" /><output id="fxMod_v"></output></div>
+<div class="slider-row"><label for="fxTone">Tone</label><input type="range" id="fxTone" min="0" max="100" step="1" /><output id="fxTone_v"></output></div>
+</div><p class="hint" id="fxTail"></p></details>
+<details class="card tool" id="amCard" open><summary><span class="tool-title">Loudness Auto-Master<small>LUFS target + true-peak limiter</small></span><button type="button" class="toggle tool-toggle" id="amToggle">Off</button></summary>
+<div class="slider-row"><label for="amTarget">Target</label><select id="amTarget"><option value="-9">−9 LUFS (loud club)</option><option value="-11">−11 LUFS (loud)</option><option value="-14">−14 LUFS (streaming)</option><option value="-16">−16 LUFS (Apple / podcasts)</option><option value="-23">−23 LUFS (EBU R128 broadcast)</option></select><span></span></div>
+<p class="hint" id="amReadout"></p>
+<p class="hint">Export: measures integrated loudness exactly (BS.1770), sets gain, limits to −1 dBTP (4× oversampled peak detection, 5 ms lookahead) and re-checks. Live preview: adaptive gain from the running loudness.</p></details>
+<details class="card tool" id="meterCard" open><summary><span class="tool-title">Loudness Meter<small>LUFS M / S / I · true peak · LRA</small></span><button type="button" class="toggle tool-toggle" id="meterToggle">On</button></summary>
+<div id="meterBody">
+<div class="meter-grid">
+<div class="mcell"><span>Momentary</span><b id="mM">–</b></div>
+<div class="mcell"><span>Short-term</span><b id="mS">–</b></div>
+<div class="mcell big"><span>Integrated</span><b id="mI">–</b></div>
+<div class="mcell"><span>True peak dBTP</span><b id="mTP">–</b></div>
+<div class="mcell"><span>LRA LU</span><b id="mLRA">–</b></div>
+</div>
+<canvas id="meterCanvas" class="meter-canvas" width="600" height="180" aria-label="Loudness history"></canvas>
+<div class="meter-foot"><span id="meterSrc">Play a preview or export a master</span><button type="button" class="ghost small" id="meterReset">Reset</button></div>
+</div></details>
 <div class="btn-row">
 <button class="primary" id="autoBtn" disabled>Auto Master</button>
 <button class="ghost" id="masterBtn" disabled>Master it</button>
@@ -101,6 +178,8 @@ button.ghost{width:100%;border:1px solid var(--line);border-radius:14px;padding:
    same code drives the live preview (AudioContext) and the export render
    (OfflineAudioContext).
    ========================================================================== */
+// Web Audio lowpass/highpass Q is in dB: -3.0103 dB = Butterworth (Q 0.7071, no resonance peak).
+const BW_Q_DB=-3.0103;
 const IMMERSIVE_PRESETS={
   Off:{label:"Off",blurb:"Plain stereo",enabled:false,layout:"none",width:100,height:0,distance:0,rear:0,depth:0,hint:"Immersive stage bypassed. Master is identical to the normal chain."},
   Immersive:{label:"Immersive",blurb:"7.1.4-style · headphones",enabled:true,layout:"7.1.4",width:125,height:55,distance:30,rear:45,depth:70,hint:"Virtual 7.1.4 bed with height speakers, blended with the stereo master. Best on headphones."},
@@ -159,13 +238,13 @@ function buildImmersiveGraph(ctx,input,s){
   // Force stereo in (mono files get duplicated to L/R).
   const inStereo=G(1);inStereo.channelCount=2;inStereo.channelCountMode="explicit";inStereo.channelInterpretation="speakers";
   input.connect(inStereo);
-  // --- Linkwitz-Riley 4th-order crossover @120 Hz: lows stay mono & dry.
+  // --- Linkwitz-Riley 4th-order crossover @120 Hz (2 cascaded Butterworths): lows stay mono & dry.
   const XO=120;
-  const lp1=BQ("lowpass",XO,0.7071),lp2=BQ("lowpass",XO,0.7071);
+  const lp1=BQ("lowpass",XO,BW_Q_DB),lp2=BQ("lowpass",XO,BW_Q_DB);
   inStereo.connect(lp1);lp1.connect(lp2);
   const lowMono=G(1);lowMono.channelCount=1;lowMono.channelCountMode="explicit";lowMono.channelInterpretation="speakers";
   lp2.connect(lowMono);lowMono.connect(out); // mono → up-mixed equally to L/R
-  const hp1=BQ("highpass",XO,0.7071),hp2=BQ("highpass",XO,0.7071);
+  const hp1=BQ("highpass",XO,BW_Q_DB),hp2=BQ("highpass",XO,BW_Q_DB);
   inStereo.connect(hp1);hp1.connect(hp2);
   // --- Mid/side matrix on the >120 Hz band.
   const split=ctx.createChannelSplitter(2);hp2.connect(split);
@@ -182,25 +261,25 @@ function buildImmersiveGraph(ctx,input,s){
   // --- Room (distance): shared short convolver, fed from the widened stereo.
   const roomSend=G(P.layout==="stereo"?P.distance*0.25:P.distance*0.45);
   const conv=ctx.createConvolver();conv.normalize=true;conv.buffer=makeRoomImpulse(ctx,P.distance);
-  const roomHp=BQ("highpass",250,0.7),roomLp=BQ("lowpass",9000-P.distance*4000,0.7);
+  const roomHp=BQ("highpass",250,BW_Q_DB),roomLp=BQ("lowpass",9000-P.distance*4000,BW_Q_DB);
   const roomIn=ctx.createChannelMerger(2);Lw.connect(roomIn,0,0);Rw.connect(roomIn,0,1);
   roomIn.connect(roomSend);roomSend.connect(roomHp);roomHp.connect(roomLp);roomLp.connect(conv);conv.connect(bus);
   if(P.layout==="stereo"||P.depth<=0.001||!SPEAKER_LAYOUTS[P.layout])return out;
   // --- Virtual speaker feeds (upmix).
   const hrtf=G(P.depth);hrtf.connect(bus);
   // Distance = farther speakers + darker HRTF bus (air absorption cue).
-  const air=BQ("lowpass",20000-P.distance*8000,0.5);air.connect(hrtf);
+  const air=BQ("lowpass",20000-P.distance*8000,BW_Q_DB);air.connect(hrtf);
   const radius=1+P.distance*2;
   const C=G(0.55);M.connect(C);
   // Surrounds: decorrelated ambience (side signal + a little L'/R'), delayed.
-  const mkSurround=(sideGain,dirSrc,delay,lpf)=>{const sum=G(1);const sg=G(sideGain);S.connect(sg);sg.connect(sum);const dg=G(0.3);dirSrc.connect(dg);dg.connect(sum);const dl=DL(delay),lp=BQ("lowpass",lpf,0.6),lvl=G(P.rear);sum.connect(dl);dl.connect(lp);lp.connect(lvl);return lvl};
+  const mkSurround=(sideGain,dirSrc,delay,lpf)=>{const sum=G(1);const sg=G(sideGain);S.connect(sg);sg.connect(sum);const dg=G(0.3);dirSrc.connect(dg);dg.connect(sum);const dl=DL(delay),lp=BQ("lowpass",lpf,BW_Q_DB),lvl=G(P.rear);sum.connect(dl);dl.connect(lp);lp.connect(lvl);return lvl};
   const feeds={L:Lw,R:Rw,C,
     Ls:mkSurround(0.8,Lw,0.011,12000),Rs:mkSurround(-0.8,Rw,0.0137,12000),
     Lrs:mkSurround(0.7,Lw,0.019,9000),Rrs:mkSurround(-0.7,Rw,0.0229,9000)};
   if(P.layout==="7.1.4"){
     // Height layer: >1.5 kHz content, short delay, presence lift at ~8 kHz
     // and a gentle pinna-style notch near 6.5 kHz (elevation cue).
-    const mkTop=(dirSrc,sideGain,delay,lvlMul)=>{const sum=G(1);const dg=G(0.6);dirSrc.connect(dg);dg.connect(sum);const sg=G(sideGain);S.connect(sg);sg.connect(sum);const hp=BQ("highpass",1500,0.6),pk=BQ("peaking",8000,0.9,3+P.height*3),nt=BQ("peaking",6500,4,-4),dl=DL(delay),lvl=G(P.height*lvlMul);sum.connect(hp);hp.connect(nt);nt.connect(pk);pk.connect(dl);dl.connect(lvl);return lvl};
+    const mkTop=(dirSrc,sideGain,delay,lvlMul)=>{const sum=G(1);const dg=G(0.6);dirSrc.connect(dg);dg.connect(sum);const sg=G(sideGain);S.connect(sg);sg.connect(sum);const hp=BQ("highpass",1500,BW_Q_DB),pk=BQ("peaking",8000,0.9,3+P.height*3),nt=BQ("peaking",6500,4,-4),dl=DL(delay),lvl=G(P.height*lvlMul);sum.connect(hp);hp.connect(nt);nt.connect(pk);pk.connect(dl);dl.connect(lvl);return lvl};
     feeds.Ltop=mkTop(Lw,0.4,0.006,0.7);feeds.Rtop=mkTop(Rw,-0.4,0.0073,0.7);
     feeds.Ltop2=mkTop(Lw,0.6,0.0151,0.5);feeds.Rtop2=mkTop(Rw,-0.6,0.0167,0.5);
   }
@@ -253,13 +332,13 @@ function dbToLin(db){return Math.pow(10,db/20)}
 function analyzeMix(buffer){const ch=buffer.numberOfChannels,len=buffer.length,sr=buffer.sampleRate;const mono=new Float32Array(len);for(let c=0;c<ch;c++){const d=buffer.getChannelData(c);for(let i=0;i<len;i++)mono[i]+=d[i]/ch}let peak=0,sumSq=0;for(let i=0;i<len;i++){const a=Math.abs(mono[i]);if(a>peak)peak=a;sumSq+=mono[i]*mono[i]}const rms=Math.sqrt(sumSq/len),crest=peak/(rms+1e-9);let lowE=0,highE=0,midE=0,lp=0,hp=0;const aL=Math.exp(-2*Math.PI*200/sr),aH=Math.exp(-2*Math.PI*4000/sr),step=Math.max(1,Math.floor(len/80000));let n=0;for(let i=0;i<len;i+=step){const x=mono[i];lp=aL*lp+(1-aL)*x;hp=aH*(hp+x-(mono[i-step]||0));const mid=x-lp;lowE+=lp*lp;highE+=hp*hp;midE+=mid*mid;n++}lowE/=n;highE/=n;midE/=n;const tot=lowE+midE+highE+1e-12;return{peak,rms,crest,lowRatio:lowE/tot,highRatio:highE/tot}}
 function pickAutoRecipe(stats){let key="Precise",depth=false,presence=false,note="";if(stats.crest>8){key="Organic";note="Open dynamics → Organic"}else if(stats.crest<4.5){key="Raw";note="Dense mix → Raw polish"}else if(stats.highRatio<0.12){key="Vocal";presence=true;note="Dark top → Vocal + Presence"}else if(stats.lowRatio>0.45){key="Bass";note="Heavy low → 808 Weight"}else if(stats.rms<0.08&&stats.peak<0.5){key="Elevated";note="Quiet mix → Elevated"}else{key="Precise";note="Balanced → Precise"}return{key,depth,presence,note}}
 function normalizePeak(buffer,targetPeak){let peak=0;for(let c=0;c<buffer.numberOfChannels;c++){const d=buffer.getChannelData(c);for(let i=0;i<d.length;i++){const a=Math.abs(d[i]);if(a>peak)peak=a}}if(peak<1e-6)return buffer;const scale=Math.min(1,targetPeak/peak);if(scale>=0.999)return buffer;const out=new AudioBuffer({length:buffer.length,numberOfChannels:buffer.numberOfChannels,sampleRate:buffer.sampleRate});for(let c=0;c<buffer.numberOfChannels;c++){const src=buffer.getChannelData(c),dst=out.getChannelData(c);for(let i=0;i<src.length;i++)dst[i]=src[i]*scale}return out}
-async function runMaster(opts,label){masterBtn.disabled=true;autoBtn.disabled=true;setStatus("Mastering · "+label+"…");try{if(typeof stopImmersivePreview==="function")stopImmersivePreview(false);let srcBuf=audioBuffer;if(immersive.enabled){setStatus("Spatial render · "+label+immersiveLabel()+"…");await new Promise(r=>setTimeout(r,30));srcBuf=await renderImmersive(audioBuffer,immersive);label+=immersiveLabel();setStatus("Mastering · "+label+"…")}const offline=await renderMaster(srcBuf,opts);if(masterUrl)URL.revokeObjectURL(masterUrl);masterBlob=bufferToWavBlob(offline);masterUrl=URL.createObjectURL(masterBlob);player.src=masterUrl;playBtn.textContent="Play";actions.classList.remove("hidden");setStatus("Done · "+label,"ok")}catch(e){setStatus("Master failed.\n"+e.message,"err")}finally{masterBtn.disabled=false;autoBtn.disabled=false}}
+async function runMaster(opts,label){masterBtn.disabled=true;autoBtn.disabled=true;setStatus("Mastering · "+label+"…");try{if(typeof stopImmersivePreview==="function")stopImmersivePreview(false);let srcBuf=audioBuffer;if(toolsActive()){setStatus("Tools · "+toolsLabel().slice(3)+"…");await new Promise(r=>setTimeout(r,30));srcBuf=await renderTools(audioBuffer,tools);label+=toolsLabel()}if(immersive.enabled){setStatus("Spatial render · "+label+immersiveLabel()+"…");await new Promise(r=>setTimeout(r,30));srcBuf=await renderImmersive(srcBuf,immersive);label+=immersiveLabel();setStatus("Mastering · "+label+"…")}let offline=await renderMaster(srcBuf,opts),loudNote="";if(tools.am.on){setStatus("Loudness · measuring + limiting to "+tools.am.target+" LUFS…");await new Promise(r=>setTimeout(r,30));const am=autoMasterBuffer(offline,tools.am.target,tools.am.ceiling);offline=am.buffer;label+=" + "+tools.am.target+" LUFS";loudNote="\nLoudness: "+fmtL(am.before.I)+" → "+fmtL(am.after.I)+" LUFS · TP "+fmtL(am.after.TP)+" dBTP · gain "+(am.gainDb>=0?"+":"")+am.gainDb.toFixed(1)+" dB · limiter "+am.grDb.toFixed(1)+" dB";$("amReadout").textContent="Last export · "+loudNote.slice(11)}if(tools.meter.on){const a=analyzeLoudness(offline);showExportAnalysis(a);if(!loudNote)loudNote="\nLoudness: "+fmtL(a.I)+" LUFS · TP "+fmtL(a.TP)+" dBTP · LRA "+a.LRA.toFixed(1)+" LU"}if(masterUrl)URL.revokeObjectURL(masterUrl);masterBlob=bufferToWavBlob(offline);masterUrl=URL.createObjectURL(masterBlob);player.src=masterUrl;playBtn.textContent="Play";actions.classList.remove("hidden");setStatus("Done · "+label+loudNote,"ok")}catch(e){setStatus("Master failed.\n"+e.message,"err")}finally{masterBtn.disabled=false;autoBtn.disabled=false}}
 autoBtn.onclick=async()=>{if(!audioBuffer)return;setStatus("Analyzing mix…");await new Promise(r=>setTimeout(r,30));const stats=analyzeMix(audioBuffer);const recipe=pickAutoRecipe(stats);style=recipe.key;depthOn=recipe.depth;presenceOn=recipe.presence;depthBtn.classList.toggle("on",depthOn);presenceBtn.classList.toggle("on",presenceOn);document.querySelectorAll(".preset").forEach(b=>b.classList.remove("active"));const buttons=grid.querySelectorAll(".preset"),keys=Object.keys(PRESETS);keys.forEach((k,i)=>{if(k===style&&buttons[i])buttons[i].classList.add("active")});presetHint.textContent=recipe.note;const cfg=PRESETS[style];let high=cfg.eq_gain_high,low=cfg.eq_gain_low;if(depthOn)low+=1;if(presenceOn)high+=0.9;await runMaster({highDb:high,lowDb:low,threshold:cfg.comp_threshold,ratio:cfg.comp_ratio,makeupDb:cfg.limiter_boost,ceilingDb:-1},"Auto · "+PRESETS[style].label)};
 masterBtn.onclick=async()=>{if(!audioBuffer)return;const cfg=PRESETS[style];let high=cfg.eq_gain_high,low=cfg.eq_gain_low;if(depthOn)low+=1;if(presenceOn)high+=0.9;const name=PRESETS[style].label+(depthOn?" + Depth":"")+(presenceOn?" + Presence":"");await runMaster({highDb:high,lowDb:low,threshold:cfg.comp_threshold,ratio:cfg.comp_ratio,makeupDb:cfg.limiter_boost,ceilingDb:-1},name)};
 playBtn.onclick=async()=>{if(!masterUrl)return;try{if(player.paused){await player.play();playBtn.textContent="Pause"}else{player.pause();playBtn.textContent="Play"}}catch(e){setStatus("Playback blocked. Tap Play again.\n"+e.message,"err")}};
 player.onended=()=>{playBtn.textContent="Play"};
 player.onpause=()=>{if(player.currentTime<player.duration)playBtn.textContent="Play"};
-downloadBtn.onclick=async()=>{if(!masterBlob||!masterUrl){setStatus("Nothing to download yet.","err");return}const fname="melitia_master_"+style.toLowerCase()+(immersive.enabled?"_immersive_"+immersive.preset.toLowerCase():"")+".wav";try{if(navigator.canShare&&navigator.canShare({files:[new File([masterBlob],fname,{type:"audio/wav"})]})){await navigator.share({files:[new File([masterBlob],fname,{type:"audio/wav"})],title:fname});setStatus("Shared · Save to Files","ok");return}}catch(e){if(e&&e.name==="AbortError")return}try{const w=window.open(masterUrl,"_blank");if(w){setStatus("Opened · Share → Save to Files","ok");return}}catch(e){}const a=document.createElement("a");a.href=masterUrl;a.download=fname;document.body.appendChild(a);a.click();a.remove();setStatus("Download started","ok")};
+downloadBtn.onclick=async()=>{if(!masterBlob||!masterUrl){setStatus("Nothing to download yet.","err");return}const fname="melitia_master_"+style.toLowerCase()+(immersive.enabled?"_immersive_"+immersive.preset.toLowerCase():"")+(tools.am.on?"_"+Math.abs(tools.am.target)+"lufs":"")+".wav";try{if(navigator.canShare&&navigator.canShare({files:[new File([masterBlob],fname,{type:"audio/wav"})]})){await navigator.share({files:[new File([masterBlob],fname,{type:"audio/wav"})],title:fname});setStatus("Shared · Save to Files","ok");return}}catch(e){if(e&&e.name==="AbortError")return}try{const w=window.open(masterUrl,"_blank");if(w){setStatus("Opened · Share → Save to Files","ok");return}}catch(e){}const a=document.createElement("a");a.href=masterUrl;a.download=fname;document.body.appendChild(a);a.click();a.remove();setStatus("Download started","ok")};
 async function renderMaster(buffer,opts){buffer=normalizePeak(buffer,0.89);const sr=buffer.sampleRate,len=buffer.length,ch=buffer.numberOfChannels;const offline=new OfflineAudioContext(ch,len,sr);const source=offline.createBufferSource();source.buffer=buffer;let node=source;if(opts.lowDb!==0){const lowShelf=offline.createBiquadFilter();lowShelf.type="lowshelf";lowShelf.frequency.value=180;lowShelf.gain.value=opts.lowDb;node.connect(lowShelf);node=lowShelf}if(opts.highDb!==0){const highShelf=offline.createBiquadFilter();highShelf.type="highshelf";highShelf.frequency.value=10000;highShelf.gain.value=opts.highDb;node.connect(highShelf);node=highShelf}const comp=offline.createDynamicsCompressor();comp.threshold.value=opts.threshold;comp.knee.value=12;comp.ratio.value=opts.ratio;comp.attack.value=0.02;comp.release.value=0.18;node.connect(comp);const gain=offline.createGain();gain.gain.value=dbToLin(Math.min(opts.makeupDb,3));comp.connect(gain);gain.connect(offline.destination);source.start(0);const rendered=await offline.startRendering();const ceiling=dbToLin(opts.ceilingDb);const out=offline.createBuffer(ch,len,sr);for(let c=0;c<ch;c++){const src=rendered.getChannelData(c),dst=out.getChannelData(c);for(let i=0;i<len;i++)dst[i]=ceiling*Math.tanh(src[i]/(ceiling+1e-6))}return out}
 function bufferToWavBlob(buffer){const numCh=buffer.numberOfChannels,sr=buffer.sampleRate,numFrames=buffer.length;const blockAlign=numCh*2,dataSize=numFrames*blockAlign;const ab=new ArrayBuffer(44+dataSize);const view=new DataView(ab);function writeStr(o,s){for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i))}writeStr(0,"RIFF");view.setUint32(4,36+dataSize,true);writeStr(8,"WAVE");writeStr(12,"fmt ");view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,numCh,true);view.setUint32(24,sr,true);view.setUint32(28,sr*blockAlign,true);view.setUint16(32,blockAlign,true);view.setUint16(34,16,true);writeStr(36,"data");view.setUint32(40,dataSize,true);let offset=44;const channels=[];for(let c=0;c<numCh;c++)channels.push(buffer.getChannelData(c));for(let i=0;i<numFrames;i++){for(let c=0;c<numCh;c++){let s=Math.max(-1,Math.min(1,channels[c][i]));view.setInt16(offset,s<0?s*0x8000:s*0x7fff,true);offset+=2}}return new Blob([ab],{type:"audio/wav"})}
 </script>
@@ -288,29 +367,530 @@ immToggle.onclick=()=>{if(immersive.enabled){if(immersive.preset==="Custom")immL
 IMM_SLIDERS.forEach(k=>{document.getElementById("imm_"+k).oninput=e=>{immersive[k]=Number(e.target.value);
   if(immersive.layout==="stereo"&&k!=="width"&&k!=="distance"&&immersive[k]>0)immersive.layout="7.1.4"; // height/rear/depth need virtual speakers
   immersive.preset="Custom";immLastPreset="Custom";syncImmersiveUI();restartPreviewSoon()}});
-// Live preview: original mix → immersive graph → safety limiter → speakers.
-let pvCtx=null,pvSrc=null,pvStartAt=0,pvOffset=0,pvTimer=null;
-function stopImmersivePreview(keepPos){
-  if(pvSrc){try{pvSrc.onended=null;pvSrc.stop()}catch(e){}if(keepPos&&pvCtx)pvOffset=(pvOffset+pvCtx.currentTime-pvStartAt)%(audioBuffer?audioBuffer.duration:1);pvSrc=null}
-  if(!keepPos)pvOffset=0;immPreviewBtn.textContent="Live preview";
-}
-function startImmersivePreview(){
-  if(!audioBuffer)return;
-  if(!pvCtx)pvCtx=new(window.AudioContext||window.webkitAudioContext)();
-  if(pvCtx.state==="suspended")pvCtx.resume();
-  if(!player.paused){player.pause()}
-  const src=pvCtx.createBufferSource();src.buffer=audioBuffer;
-  const lim=pvCtx.createDynamicsCompressor();lim.threshold.value=-3;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=0.002;lim.release.value=0.1;
-  let head=src;
-  if(immersive.enabled){head=buildImmersiveGraph(pvCtx,src,immersive)}
-  const trim=pvCtx.createGain();trim.gain.value=0.89;head.connect(trim);trim.connect(lim);lim.connect(pvCtx.destination);
-  src.onended=()=>{if(pvSrc===src){pvSrc=null;pvOffset=0;immPreviewBtn.textContent="Live preview"}};
-  pvStartAt=pvCtx.currentTime;src.start(0,pvOffset);pvSrc=src;immPreviewBtn.textContent="Stop preview";
-}
-function restartPreviewSoon(){if(!pvSrc)return;clearTimeout(pvTimer);pvTimer=setTimeout(()=>{if(pvSrc){stopImmersivePreview(true);startImmersivePreview()}},180)}
-immPreviewBtn.onclick=()=>{if(!audioBuffer){setStatus("Upload a mix first.","err");return}if(pvSrc)stopImmersivePreview(false);else startImmersivePreview()};
-player.addEventListener("play",()=>{if(pvSrc)stopImmersivePreview(true)});
+// Live preview engine lives in the Tools / Chain script (stopImmersivePreview / startImmersivePreview / restartPreviewSoon).
 syncImmersiveUI();
+</script>
+<script>
+/* ==========================================================================
+   LOUDNESS / TRUE-PEAK DSP (pure JS, no Web Audio dependency)
+   One implementation shared by: offline export analysis + limiting (main
+   thread), the realtime AudioWorklet processors (stringified into a Blob
+   module) and the ScriptProcessor fallback for browsers without worklets.
+   - ITU-R BS.1770-4 K-weighting, 400 ms momentary, 3 s short-term,
+     gated integrated loudness (abs -70 LUFS, rel -10 LU)
+   - EBU Tech 3342 loudness range (abs -70, rel -20 LU, 10th-95th pct)
+   - True peak: 4x polyphase windowed-sinc interpolation (estimate)
+   - Lookahead true-peak limiter (guaranteed gain envelope, smooth release)
+   ========================================================================== */
+function MM_DSP_SOURCE(){
+  "use strict";
+  const PH=4,TAPS=12,FIR=(function(){
+    const N=PH*TAPS,c=(N-1)/2,h=new Float64Array(N),fc=0.5/PH;
+    for(let n=0;n<N;n++){const t=n-c,x=2*fc*t,s=x===0?1:Math.sin(Math.PI*x)/(Math.PI*x);
+      const w=0.42-0.5*Math.cos(2*Math.PI*(n+0.5)/N)+0.08*Math.cos(4*Math.PI*(n+0.5)/N);h[n]=s*w}
+    const ph=[];for(let k=0;k<PH;k++){const p=new Float64Array(TAPS);let sum=0;for(let m=0;m<TAPS;m++){p[m]=h[m*PH+k];sum+=p[m]}for(let m=0;m<TAPS;m++)p[m]/=sum;ph.push(p)}
+    return ph})();
+  const D=TAPS/2; // detector latency in input samples
+  // Streaming 4x true-peak detector. push(c,x) per channel per sample; returns
+  // max |value| over interpolated points in the interval [n-D, n-D+1].
+  class TruePeakDetector{
+    constructor(nch){this.nch=nch;this.hist=[];for(let c=0;c<nch;c++)this.hist.push(new Float64Array(TAPS*2));this.pos=0}
+    reset(){this.hist.forEach(h=>h.fill(0));this.pos=0}
+    // Call once per sample frame with an array of channel values; returns peak (linear).
+    frame(xs){
+      const p=this.pos;let q=0;
+      for(let c=0;c<this.nch;c++){
+        const h=this.hist[c];const x=xs[c];h[p]=x;h[p+TAPS]=x; // mirrored ring → contiguous window
+        const base=p+TAPS; // h[base-m] = x[n-m]
+        let a=Math.abs(h[base-D]),b=Math.abs(h[base-D+1]);if(a>q)q=a;if(b>q)q=b;
+        for(let k=0;k<PH;k++){const f=FIR[k];let y=0;for(let m=0;m<TAPS;m++)y+=f[m]*h[base-m];y=Math.abs(y);if(y>q)q=y}
+      }
+      this.pos=(p+1)%TAPS;return q
+    }
+  }
+  function kCoeffs(sr){
+    let f0=1681.974450955533,G=3.999843853973347,Q=0.7071752369554196,K=Math.tan(Math.PI*f0/sr);
+    const Vh=Math.pow(10,G/20),Vb=Math.pow(Vh,0.4996667741545416),a0=1+K/Q+K*K;
+    const s1={b0:(Vh+Vb*K/Q+K*K)/a0,b1:2*(K*K-Vh)/a0,b2:(Vh-Vb*K/Q+K*K)/a0,a1:2*(K*K-1)/a0,a2:(1-K/Q+K*K)/a0};
+    f0=38.13547087602444;Q=0.5003270373238773;K=Math.tan(Math.PI*f0/sr);const d=1+K/Q+K*K;
+    const s2={b0:1,b1:-2,b2:1,a1:2*(K*K-1)/d,a2:(1-K/Q+K*K)/d};
+    return[s1,s2]
+  }
+  const ABS_P=Math.pow(10,(-70+0.691)/10);
+  const lufs=p=>p>0?-0.691+10*Math.log10(p):-Infinity;
+  function channelWeights(nch){
+    if(nch===1)return[2]; // mono measured as dual-mono (plays from both speakers)
+    if(nch===6)return[1,1,1,0,1.41,1.41];
+    const w=[];for(let c=0;c<nch;c++)w.push(c<3?1:1.41);return w
+  }
+  class LoudnessMeterDSP{
+    constructor(sr,nch){this.sr=sr;this.nch=nch;this.w=channelWeights(nch);this.k=kCoeffs(sr);this.sub=Math.max(1,Math.round(sr/10));this.tp=new TruePeakDetector(nch);this.fr=new Float64Array(nch);this.reset()}
+    reset(){this.z=[];for(let c=0;c<this.nch;c++)this.z.push(new Float64Array(4));this.acc=0;this.cnt=0;this.ring=new Float64Array(30);this.nSub=0;this.blocks=[];this.st=[];this.mom=-Infinity;this.short=-Infinity;this.tpMax=0;this.spMax=0;this.maxM=-Infinity;this.maxS=-Infinity;this.tp.reset()}
+    process(ch,n,off){
+      off=off||0;const s1=this.k[0],s2=this.k[1],nch=this.nch,w=this.w,fr=this.fr;
+      for(let i=0;i<n;i++){
+        let e=0;
+        for(let c=0;c<nch;c++){
+          const x=ch[c][off+i];fr[c]=x;const ax=x<0?-x:x;if(ax>this.spMax)this.spMax=ax;
+          const z=this.z[c];
+          // stage 1 (DF2T)
+          const y1=s1.b0*x+z[0];z[0]=s1.b1*x-s1.a1*y1+z[1];z[1]=s1.b2*x-s1.a2*y1;
+          const y2=y1+z[2];z[2]=-2*y1-s2.a1*y2+z[3];z[3]=y1-s2.a2*y2;
+          e+=w[c]*y2*y2;
+        }
+        const q=this.tp.frame(fr);if(q>this.tpMax)this.tpMax=q;
+        this.acc+=e;
+        if(++this.cnt===this.sub){this._pushSub(this.acc/this.sub);this.acc=0;this.cnt=0}
+      }
+    }
+    _pushSub(p){
+      this.ring[this.nSub%30]=p;this.nSub++;
+      if(this.nSub>=4){let s=0;for(let j=1;j<=4;j++)s+=this.ring[(this.nSub-j)%30];const b=s/4;this.blocks.push(b);this.mom=lufs(b);if(this.mom>this.maxM)this.maxM=this.mom}
+      if(this.nSub>=30){let s=0;for(let j=0;j<30;j++)s+=this.ring[j];const b=s/30;this.st.push(b);this.short=lufs(b);if(this.short>this.maxS)this.maxS=this.short}
+    }
+    integrated(){
+      let s=0,n=0;const B=this.blocks;for(let i=0;i<B.length;i++)if(B[i]>ABS_P){s+=B[i];n++}
+      if(!n)return-Infinity;const rel=s/n*0.1,thr=Math.max(rel,ABS_P);s=0;n=0;
+      for(let i=0;i<B.length;i++)if(B[i]>thr){s+=B[i];n++}return n?lufs(s/n):-Infinity
+    }
+    lra(){
+      const S=this.st;let s=0,n=0;for(let i=0;i<S.length;i++)if(S[i]>ABS_P){s+=S[i];n++}
+      if(n<2)return 0;const thr=Math.max(ABS_P,s/n*0.01),v=[];for(let i=0;i<S.length;i++)if(S[i]>thr)v.push(lufs(S[i]));
+      if(v.length<2)return 0;v.sort((a,b)=>a-b);const pct=q=>v[Math.min(v.length-1,Math.max(0,Math.round(q*(v.length-1))))];return Math.max(0,pct(0.95)-pct(0.10))
+    }
+    snapshot(){return{M:this.mom,S:this.short,I:this.integrated(),LRA:this.lra(),TP:this.tpMax>0?20*Math.log10(this.tpMax):-Infinity,SP:this.spMax>0?20*Math.log10(this.spMax):-Infinity,maxM:this.maxM,maxS:this.maxS}}
+  }
+  // Lookahead true-peak limiter. Output is delayed by `latency` samples.
+  class TruePeakLimiterDSP{
+    constructor(sr,nch,opt){
+      opt=opt||{};this.sr=sr;this.nch=nch;this.L=Math.max(8,Math.round((opt.lookaheadMs||5)*sr/1000));
+      this.setCeiling(opt.ceilingDb==null?-1:opt.ceilingDb);this.alpha=1-Math.exp(-1/((opt.releaseMs||120)*sr/1000));
+      this.latency=D+this.L;this.det=new TruePeakDetector(nch);this.fr=new Float64Array(nch);this.reset()
+    }
+    setCeiling(db){this.ceil=Math.pow(10,(db-0.1)/20)} // 0.1 dB safety margin
+    reset(){
+      const L=this.L,cap=L+2;this.dq=new Float64Array(cap);this.di=new Int32Array(cap);this.dh=0;this.dt=0;this.t=0;
+      this.r=1;this.box=new Float64Array(L+1);this.boxSum=L+1;this.box.fill(1);this.bi=0;
+      this.dl=[];for(let c=0;c<this.nch;c++)this.dl.push(new Float64Array(this.latency+1));this.dpos=0;this.minGain=1;this.det.reset();this.cntRecalc=0
+    }
+    process(inp,out,n,preGain){
+      const g0=preGain==null?1:preGain,nch=this.nch,L=this.L,cap=L+2,lat=this.latency,fr=this.fr;
+      for(let i=0;i<n;i++){
+        for(let c=0;c<nch;c++){fr[c]=inp[c][i]*g0}
+        const q=this.det.frame(fr);
+        const greq=q>this.ceil?this.ceil/q:1;
+        // sliding window min over last L+1 g_req values (monotonic deque)
+        while(this.dt!==this.dh&&this.dq[(this.dt-1+cap)%cap]>=greq)this.dt=(this.dt-1+cap)%cap;
+        this.dq[this.dt]=greq;this.di[this.dt]=this.t;this.dt=(this.dt+1)%cap;
+        while(this.di[this.dh]<=this.t-L-1)this.dh=(this.dh+1)%cap;
+        const m=this.dq[this.dh];
+        // instant attack, exponential release
+        let r=this.r+(1-this.r)*this.alpha;if(m<r)r=m;this.r=r;
+        // box average over L+1 → smooth attack that is guaranteed to reach g_req in time
+        this.boxSum+=r-this.box[this.bi];this.box[this.bi]=r;this.bi=(this.bi+1)%(L+1);
+        if(++this.cntRecalc>=8192){this.cntRecalc=0;let s=0;for(let j=0;j<=L;j++)s+=this.box[j];this.boxSum=s}
+        const g=Math.min(1,this.boxSum/(L+1));if(g<this.minGain)this.minGain=g;
+        // audio delay line: total latency = D + L
+        const wp=this.dpos,rp=(wp+1)%(lat+1);
+        for(let c=0;c<nch;c++){const d=this.dl[c];d[wp]=fr[c];out[c][i]=d[rp]*g}
+        this.dpos=rp;this.t++;
+      }
+    }
+  }
+  // Realtime loudness auto-master: input meter → slewed gain → TP limiter → output meter.
+  class AutoMasterDSP{
+    constructor(sr,nch){this.sr=sr;this.nch=nch;this.inM=new LoudnessMeterDSP(sr,nch);this.outM=new LoudnessMeterDSP(sr,nch);this.lim=new TruePeakLimiterDSP(sr,nch,{ceilingDb:-1,lookaheadMs:5,releaseMs:150});this.target=-14;this.enabled=true;this.gainDb=0;this.corr=0;this.tick=0;this.tmp=[];for(let c=0;c<nch;c++)this.tmp.push(new Float64Array(128));this.reset()}
+    reset(){this.inM.reset();this.outM.reset();this.lim.reset();this.gainDb=0;this.desired=0;this.corr=0;this.tick=0;this.settled=0}
+    process(inp,out,n){
+      if(!this.enabled){for(let c=0;c<this.nch;c++)out[c].set(inp[c].subarray(0,n));return}
+      if(this.tmp[0].length<n)this.tmp=this.tmp.map(()=>new Float64Array(n));
+      this.inM.process(inp,n);
+      this.tick+=n;
+      if(this.tick>=this.sr/10){this.tick=0;
+        const I=this.inM.integrated(),S=this.inM.short,M=this.inM.mom,ref=isFinite(I)&&this.inM.blocks.length>=30?I:(isFinite(S)?S:M);
+        // limiter-loss compensation: compare output vs (input + gain) over the same 3 s window,
+        // only once the gain has been steady for 3 s (no integrator wind-up).
+        this.settled=Math.abs(this.desired-this.gainDb)<0.3?this.settled+1:0;
+        const So=this.outM.short;
+        if(this.settled>=30&&isFinite(S)&&isFinite(So)&&S>-60){const loss=S+this.gainDb-So;this.corr+=0.1*(Math.max(0,Math.min(8,loss))-this.corr)}
+        if(isFinite(ref)&&ref>-70)this.desired=Math.max(-20,Math.min(20,this.target-ref+this.corr));
+      }
+      const maxStep=6/this.sr*n; // ≤ 6 dB/s slew
+      const from=this.gainDb,to=from+Math.max(-maxStep,Math.min(maxStep,this.desired-from));this.gainDb=to;
+      const g1=Math.pow(10,from/20),g2=Math.pow(10,to/20);
+      for(let c=0;c<this.nch;c++){const s=inp[c],d=this.tmp[c];for(let i=0;i<n;i++)d[i]=s[i]*(g1+(g2-g1)*i/n)}
+      this.lim.minGain=1;this.lim.process(this.tmp,out,n,1);
+      this.outM.process(out,n);
+    }
+    stats(){return{gainDb:this.gainDb,grDb:-20*Math.log10(Math.max(1e-6,this.lim.minGain)),I:this.outM.integrated()}}
+  }
+  return{TruePeakDetector,LoudnessMeterDSP,TruePeakLimiterDSP,AutoMasterDSP,lufs,TP_LATENCY:D}
+}
+const MMDSP=MM_DSP_SOURCE();
+function chArrays(buffer){const a=[];for(let c=0;c<buffer.numberOfChannels;c++)a.push(buffer.getChannelData(c));return a}
+// Exact offline analysis of a rendered buffer.
+function analyzeLoudness(buffer){
+  const m=new MMDSP.LoudnessMeterDSP(buffer.sampleRate,buffer.numberOfChannels);
+  const ch=chArrays(buffer),N=buffer.length,blk=65536;for(let o=0;o<N;o+=blk)m.process(ch,Math.min(blk,N-o),o);
+  // flush true-peak detector latency
+  const z=[];for(let c=0;c<ch.length;c++)z.push(new Float32Array(MMDSP.TP_LATENCY+1));m.process(z,MMDSP.TP_LATENCY+1);
+  const s=m.snapshot();s.history=m.st.map(MMDSP.lufs);return s
+}
+// Offline LUFS normalisation + true-peak limiting (ceiling dBTP). Iterates so
+// the integrated loudness lands on target after limiting.
+function autoMasterBuffer(buffer,targetLufs,ceilingDb){
+  ceilingDb=ceilingDb==null?-1:ceilingDb;
+  const sr=buffer.sampleRate,nch=buffer.numberOfChannels,N=buffer.length,src=chArrays(buffer);
+  const before=analyzeLoudness(buffer);
+  if(!isFinite(before.I))return{buffer,before,after:before,gainDb:0,grDb:0};
+  let gainDb=Math.max(-30,Math.min(30,targetLufs-before.I)),out=null,after=null,gr=0;
+  let prevG=null,prevI=null;
+  for(let pass=0;pass<6;pass++){
+    const lim=new MMDSP.TruePeakLimiterDSP(sr,nch,{ceilingDb,lookaheadMs:5,releaseMs:120});
+    const lat=lim.latency,g=Math.pow(10,gainDb/20);
+    out=new AudioBuffer({length:N,numberOfChannels:nch,sampleRate:sr});const dst=chArrays(out);
+    const blk=8192,tin=[],tout=[];for(let c=0;c<nch;c++){tin.push(new Float32Array(blk));tout.push(new Float32Array(blk))}
+    for(let o=0;o<N+lat;o+=blk){
+      const n=Math.min(blk,N+lat-o);
+      for(let c=0;c<nch;c++){const s=src[c],t=tin[c];for(let i=0;i<n;i++){const j=o+i;t[i]=j<N?s[j]:0}}
+      lim.process(tin,tout,n,g);
+      for(let c=0;c<nch;c++){const d=dst[c],t=tout[c];for(let i=0;i<n;i++){const j=o+i-lat;if(j>=0&&j<N)d[j]=t[i]}}
+    }
+    gr=-20*Math.log10(Math.max(1e-6,lim.minGain));
+    after=analyzeLoudness(out);
+    const err=targetLufs-after.I;if(!isFinite(err)||Math.abs(err)<0.1||gainDb>=30)break;
+    // secant step: under heavy limiting loudness grows < 1 dB per dB of gain
+    let slope=1;if(prevG!==null&&Math.abs(gainDb-prevG)>1e-3)slope=Math.max(0.15,Math.min(1,(after.I-prevI)/(gainDb-prevG)));
+    prevG=gainDb;prevI=after.I;gainDb=Math.min(30,gainDb+err/slope);
+  }
+  // final true-peak safety trim (should rarely trigger)
+  if(after.TP>ceilingDb){const t=Math.pow(10,(ceilingDb-after.TP-0.02)/20);chArrays(out).forEach(d=>{for(let i=0;i<d.length;i++)d[i]*=t});after=analyzeLoudness(out)}
+  return{buffer:out,before,after,gainDb,grDb:gr}
+}
+
+/* ==========================================================================
+   TOOLS / CHAIN — EQ → Saturation → Space FX → (Immersive) → Mastering preset
+   → Loudness Auto-Master (LUFS + true-peak limiter) → Loudness Meter
+   Graph builders are context-agnostic (AudioContext + OfflineAudioContext).
+   ========================================================================== */
+const EQ_DEFAULT_BANDS=[{type:"lowshelf",f:80,g:0,q:0.7},{type:"peaking",f:250,g:0,q:1},{type:"peaking",f:1000,g:0,q:1},{type:"peaking",f:4000,g:0,q:1},{type:"highshelf",f:10000,g:0,q:0.7}];
+const tools={
+  eq:{on:false,bands:EQ_DEFAULT_BANDS.map(b=>Object.assign({},b)),sel:0},
+  sat:{on:false,drive:30,tone:0,mix:100},
+  fx:{on:false,mode:"supermassive",mix:25,feedback:70,time:45,mod:40,tone:55},
+  am:{on:false,target:-14,ceiling:-1},
+  meter:{on:true}
+};
+function toolsActive(){return tools.eq.on||tools.sat.on||tools.fx.on}
+function toolsLabel(){const a=[];if(tools.eq.on)a.push("EQ");if(tools.sat.on)a.push("Sat");if(tools.fx.on)a.push(FX_MODES[tools.fx.mode].label);return a.length?" + "+a.join("/"):""}
+const FX_MODES={echo:{label:"Echo"},chorus:{label:"Chorus"},flange:{label:"Flange"},supermassive:{label:"Supermassive"}};
+function tClamp(v,a,b){return Math.max(a,Math.min(b,v))}
+// ---------- EQ ----------
+function buildEqGraph(ctx,input,eq,liveOut){
+  let node=input;const nodes=[];
+  eq.bands.forEach(b=>{const f=ctx.createBiquadFilter();f.type=b.type;f.frequency.value=tClamp(b.f,20,20000);f.gain.value=tClamp(b.g,-18,18);f.Q.value=eqQParam(b);node.connect(f);node=f;nodes.push(f)});
+  if(liveOut)liveOut.eq=nodes;return node
+}
+// LP/HP Q is in dB in Web Audio; the UI uses linear Q everywhere.
+function eqQParam(b){const q=tClamp(b.q,0.1,18);return b.type==="lowpass"||b.type==="highpass"?20*Math.log10(q):q}
+function updateLiveEq(nodes,eq){if(!nodes||nodes.length!==eq.bands.length)return false;eq.bands.forEach((b,i)=>{const f=nodes[i];if(f.type!==b.type)f.type=b.type;f.frequency.value=tClamp(b.f,20,20000);f.gain.value=tClamp(b.g,-18,18);f.Q.value=eqQParam(b)});return true}
+// ---------- Saturation ----------
+const SAT_CURVES={};
+function satDriveLin(drive){return Math.pow(10,tClamp(drive,0,100)*0.24/20)} // 0–24 dB
+function satCurve(drive){
+  const k=Math.round(drive);if(SAT_CURVES[k])return SAT_CURVES[k];
+  const D=satDriveLin(k),n=4096,c=new Float32Array(n);
+  for(let i=0;i<n;i++){const u=i/(n-1)*2-1;c[i]=Math.tanh(4*u*D)} // input pre-scaled by 1/4 → covers ±4 (≈+12 dBFS)
+  return SAT_CURVES[k]=c
+}
+// RMS-matched makeup for a -12 dBFS reference sine so drive doesn't just make it louder.
+function satMakeup(drive){
+  const D=satDriveLin(drive),a=0.25;let si=0,so=0;
+  for(let i=0;i<512;i++){const x=a*Math.sin(2*Math.PI*i/512);si+=x*x;const y=Math.tanh(D*x);so+=y*y}
+  return Math.sqrt(si/Math.max(1e-12,so))
+}
+function buildSatGraph(ctx,input,s){
+  const out=ctx.createGain(),mix=tClamp(s.mix,0,100)/100;
+  const dry=ctx.createGain();dry.gain.value=1-mix;input.connect(dry);dry.connect(out);
+  const pre=ctx.createGain();pre.gain.value=0.25;
+  const ws=ctx.createWaveShaper();ws.curve=satCurve(s.drive);ws.oversample="4x";
+  const mk=ctx.createGain();mk.gain.value=satMakeup(s.drive);
+  const t=tClamp(s.tone,-100,100)/100;
+  const lo=ctx.createBiquadFilter();lo.type="lowshelf";lo.frequency.value=250;lo.gain.value=-t*3;
+  const hi=ctx.createBiquadFilter();hi.type="highshelf";hi.frequency.value=2500;hi.gain.value=t*6;
+  const wet=ctx.createGain();wet.gain.value=mix;
+  input.connect(pre);pre.connect(ws);ws.connect(mk);mk.connect(lo);lo.connect(hi);hi.connect(wet);wet.connect(out);
+  return out
+}
+// ---------- Space FX (delay / chorus / flange / FDN "supermassive") ----------
+let FX_SAFE_CURVE=null;
+function fxSafeCurve(){ // linear below 0.6, smooth tanh knee above → bounded feedback loop
+  if(FX_SAFE_CURVE)return FX_SAFE_CURVE;const n=2048,c=new Float32Array(n);
+  for(let i=0;i<n;i++){const x=(i/(n-1)*2-1)*4,a=Math.abs(x);c[i]=Math.sign(x)*(a<0.6?a:0.6+0.4*Math.tanh((a-0.6)/0.4))}
+  return FX_SAFE_CURVE=c
+}
+function fxParams(s){
+  const P={mix:tClamp(s.mix,0,100)/100,fb:tClamp(s.feedback,0,100)/100,time:tClamp(s.time,0,100)/100,mod:tClamp(s.mod,0,100)/100,tone:tClamp(s.tone,0,100)/100,mode:FX_MODES[s.mode]?s.mode:"supermassive"};
+  P.lp=800*Math.pow(20,P.tone); // 800 Hz – 16 kHz loop damping
+  return P
+}
+const FX_RT_MAX=15; // s — feedback is mapped to a decay time, so tails always die out
+function fxEchoGain(P){const t=0.06+P.time*1.14;return{t,g:Math.min(0.9*P.fb,Math.pow(10,-3*t/FX_RT_MAX))}}
+function fxReverbRt(P){return 0.4+P.fb*P.fb*(FX_RT_MAX-0.4)}
+function fxTailSeconds(s){
+  const P=fxParams(s);
+  if(P.mode==="chorus")return 0.2;if(P.mode==="flange")return 0.5;
+  if(P.mode==="echo"){const e=fxEchoGain(P);return e.g<0.01?e.t+0.2:Math.min(FX_RT_MAX,e.t*60/(-20*Math.log10(e.g)))+0.3}
+  return fxReverbRt(P)+0.5
+}
+function buildFxGraph(ctx,input,s,liveOut){
+  const P=fxParams(s);const G=v=>{const g=ctx.createGain();g.gain.value=v;return g};
+  const BQ=(t,f,q)=>{const b=ctx.createBiquadFilter();b.type=t;b.frequency.value=f;b.Q.value=q;return b};
+  const DL=(t,max)=>{const d=ctx.createDelay(max);d.delayTime.value=t;return d};
+  const LFO=(rate,depth,target,phase)=>{const o=ctx.createOscillator();o.type="sine";o.frequency.value=rate;const g=G(depth);o.connect(g);g.connect(target);o.start(phase?ctx.currentTime+phase/rate:0);if(liveOut){(liveOut.osc=liveOut.osc||[]).push(o)}return o};
+  const SAFE=()=>{const pre=G(0.25),ws=ctx.createWaveShaper();ws.curve=fxSafeCurve();pre.connect(ws);return{i:pre,o:ws}}; // curve is in signal units over ±4
+  const out=G(1);out.channelCount=2;out.channelCountMode="explicit";
+  const dry=G(Math.cos(P.mix*Math.PI/2));input.connect(dry);dry.connect(out);
+  const inSt=G(1);inSt.channelCount=2;inSt.channelCountMode="explicit";inSt.channelInterpretation="speakers";input.connect(inSt);
+  const split=ctx.createChannelSplitter(2);inSt.connect(split);
+  const merge=ctx.createChannelMerger(2);
+  let wetGain=Math.sin(P.mix*Math.PI/2);
+  if(P.mode==="echo"){
+    // ping-pong delay, damped feedback loop, optional tape wobble
+    const e=fxEchoGain(P),t=e.t,g=e.g,mono=G(0.5);split.connect(mono,0);split.connect(mono,1);
+    const dL=DL(t,1.5),dR=DL(t,1.5),lpL=BQ("lowpass",P.lp,BW_Q_DB),lpR=BQ("lowpass",P.lp,BW_Q_DB),fL=G(g),fR=G(g),sL=SAFE(),sR=SAFE();
+    mono.connect(dL);dL.connect(lpL);lpL.connect(sL.i);sL.o.connect(fL);fL.connect(dR);dR.connect(lpR);lpR.connect(sR.i);sR.o.connect(fR);fR.connect(dL);
+    dL.connect(merge,0,0);dR.connect(merge,0,1);
+    if(P.mod>0){LFO(0.5,P.mod*0.002,dL.delayTime);LFO(0.43,P.mod*0.002,dR.delayTime,0.25)}
+  }else if(P.mode==="chorus"){
+    // 3 modulated voices per side, no feedback
+    const base=0.01+P.time*0.025,depth=Math.min(base*0.8,0.0005+P.mod*0.006);
+    [0,1].forEach(c=>{[0,1,2].forEach(v=>{const d=DL(base*(1+v*0.23),0.1),g=G(0.45);split.connect(d,c);d.connect(g);g.connect(merge,0,c);LFO(0.27+v*0.31+c*0.07,depth,d.delayTime,v*0.33+c*0.5)})});
+  }else if(P.mode==="flange"){
+    const base=0.001+P.time*0.005,depth=base*0.9*Math.max(0.1,P.mod),g=Math.min(0.85,P.fb*0.85);
+    [0,1].forEach(c=>{const d=DL(base,0.05),f=G(g),s=SAFE(),o=G(0.8);split.connect(d,c);d.connect(o);o.connect(merge,0,c);d.connect(s.i);s.o.connect(f);f.connect(d);LFO(0.12+P.mod*0.3,depth,d.delayTime,c*0.5)});
+  }else{
+    // "Supermassive": 4-line feedback delay network, Hadamard mixing (orthogonal),
+    // damping + low-cut in every loop, per-line LFO pitch drift, soft safety clip.
+    const T=0.04+P.time*0.41,rt=fxReverbRt(P),ratios=[1,1.31,1.71,2.13];
+    const H=[[1,1,1,1],[1,-1,1,-1],[1,1,-1,-1],[1,-1,-1,1]];
+    const pre=DL(0.012+P.time*0.03,0.2);inSt.connect(pre);const ps=ctx.createChannelSplitter(2);pre.connect(ps);
+    const lines=ratios.map((r,i)=>{
+      const sum=G(1),d=DL(T*r,2.5),lp=BQ("lowpass",P.lp,BW_Q_DB),hp=BQ("highpass",90,BW_Q_DB),s=SAFE();
+      const gi=G(Math.pow(10,-3*T*r/rt)); // per-line decay → RT60 = rt (Jot FDN)
+      sum.connect(d);d.connect(lp);lp.connect(hp);hp.connect(gi);gi.connect(s.i);
+      if(P.mod>0)LFO((0.07+0.06*i)*(0.5+P.mod),Math.min(T*r*0.5,P.mod*0.008),d.delayTime,i*0.37);
+      ps.connect(sum,i%2);return{sum,o:s.o}
+    });
+    lines.forEach((li,i)=>lines.forEach((lj,j)=>{const m=G(H[j][i]*0.5);li.o.connect(m);m.connect(lj.sum)}));
+    lines.forEach((li,i)=>{const o=G(i<2?0.7:-0.7);li.o.connect(o);o.connect(merge,0,i%2)});
+    const gAvg=Math.pow(10,-3*T*1.5/rt);wetGain*=Math.sqrt(Math.max(0.05,1-gAvg*gAvg))*1.2;
+  }
+  const wet=G(wetGain);merge.connect(wet);wet.connect(out);
+  return out
+}
+function buildToolsGraph(ctx,input,t,liveOut){
+  let node=input;
+  if(t.eq.on)node=buildEqGraph(ctx,node,t.eq,liveOut);
+  if(t.sat.on)node=buildSatGraph(ctx,node,t.sat);
+  if(t.fx.on)node=buildFxGraph(ctx,node,t.fx,liveOut);
+  return node
+}
+// Offline: render EQ/Sat/FX to a stereo buffer (+ FX tail).
+async function renderTools(buffer,t){
+  const sr=buffer.sampleRate,tail=t.fx.on?Math.round(fxTailSeconds(t.fx)*sr):0,len=buffer.length+tail;
+  const off=new OfflineAudioContext(2,len,sr);const src=off.createBufferSource();src.buffer=buffer;
+  const o=buildToolsGraph(off,src,t);o.connect(off.destination);src.start(0);
+  const r=await off.startRendering();
+  let bad=false;for(let c=0;c<2&&!bad;c++){const d=r.getChannelData(c);for(let i=0;i<d.length;i+=97)if(!isFinite(d[i])){bad=true;break}}
+  if(bad)throw new Error("Tools render produced invalid samples");
+  return r
+}
+// ---------- Realtime loudness worklets (Blob URL module) ----------
+function mmWorkletSource(){
+  return "const MMDSP=("+MM_DSP_SOURCE.toString()+")();\n"+
+  "class MMMeter extends AudioWorkletProcessor{constructor(){super();this.m=new MMDSP.LoudnessMeterDSP(sampleRate,2);this.n=0;this.port.onmessage=e=>{if(e.data&&e.data.reset)this.m.reset()}}\n"+
+  "process(inputs,outputs){const i=inputs[0],o=outputs[0];if(!i||!i.length)return true;const ch=[i[0],i[1]||i[0]],n=i[0].length;this.m.process(ch,n);for(let c=0;c<o.length;c++)o[c].set(ch[Math.min(c,1)]);this.n+=n;if(this.n>=sampleRate/10){this.n=0;this.port.postMessage(this.m.snapshot())}return true}}\n"+
+  "registerProcessor('mm-meter',MMMeter);\n"+
+  "class MMAuto extends AudioWorkletProcessor{constructor(){super();this.a=new MMDSP.AutoMasterDSP(sampleRate,2);this.n=0;this.port.onmessage=e=>{const d=e.data||{};if(d.reset)this.a.reset();if(d.target!=null)this.a.target=d.target;if(d.enabled!=null)this.a.enabled=d.enabled}}\n"+
+  "process(inputs,outputs){const i=inputs[0],o=outputs[0];if(!i||!i.length)return true;const ch=[i[0],i[1]||i[0]],n=i[0].length;this.a.process(ch,[o[0],o[1]||new Float32Array(n)],n);this.n+=n;if(this.n>=sampleRate/5){this.n=0;this.port.postMessage(this.a.stats())}return true}}\n"+
+  "registerProcessor('mm-automaster',MMAuto);\n"
+}
+async function mmLoadWorklets(ctx){
+  if(!ctx.audioWorklet||typeof AudioWorkletNode==="undefined")return false;
+  const src=mmWorkletSource();
+  try{const url=URL.createObjectURL(new Blob([src],{type:"application/javascript"}));await ctx.audioWorklet.addModule(url);URL.revokeObjectURL(url);return true}catch(e){}
+  try{await ctx.audioWorklet.addModule("data:application/javascript;base64,"+btoa(unescape(encodeURIComponent(src))));return true}catch(e){}
+  return false
+}
+// Wrap a DSP in a node with a uniform {node, port-like API}; ScriptProcessor fallback.
+function mmMakeTailNodes(ctx,useWorklet,onMeter,onAuto){
+  const opts={numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],channelCount:2,channelCountMode:"explicit",channelInterpretation:"speakers"};
+  if(useWorklet){
+    const am=new AudioWorkletNode(ctx,"mm-automaster",opts),me=new AudioWorkletNode(ctx,"mm-meter",opts);
+    me.port.onmessage=e=>onMeter(e.data);am.port.onmessage=e=>onAuto(e.data);
+    return{am,me,send:(o)=>am.port.postMessage(o),resetMeter:()=>me.port.postMessage({reset:true}),mode:"AudioWorklet"}
+  }
+  const amD=new MMDSP.AutoMasterDSP(ctx.sampleRate,2),meD=new MMDSP.LoudnessMeterDSP(ctx.sampleRate,2);
+  const am=ctx.createScriptProcessor(2048,2,2),me=ctx.createScriptProcessor(2048,2,2);let tick=0;
+  am.onaudioprocess=e=>{const ib=e.inputBuffer,ob=e.outputBuffer,n=ib.length;amD.process([ib.getChannelData(0),ib.getChannelData(1)],[ob.getChannelData(0),ob.getChannelData(1)],n);onAuto(amD.stats())};
+  me.onaudioprocess=e=>{const ib=e.inputBuffer,ob=e.outputBuffer,n=ib.length,ch=[ib.getChannelData(0),ib.getChannelData(1)];meD.process(ch,n);ob.getChannelData(0).set(ch[0]);ob.getChannelData(1).set(ch[1]);tick+=n;if(tick>=ctx.sampleRate/10){tick=0;onMeter(meD.snapshot())}};
+  return{am,me,send:(o)=>{if(o.reset)amD.reset();if(o.target!=null)amD.target=o.target;if(o.enabled!=null)amD.enabled=o.enabled},resetMeter:()=>meD.reset(),mode:"ScriptProcessor"}
+}
+// Realtime version of renderMaster (preset shelves → compressor → makeup → soft ceiling).
+function buildMasterApprox(ctx,input,opts){
+  let node=input;
+  if(opts.lowDb!==0){const f=ctx.createBiquadFilter();f.type="lowshelf";f.frequency.value=180;f.gain.value=opts.lowDb;node.connect(f);node=f}
+  if(opts.highDb!==0){const f=ctx.createBiquadFilter();f.type="highshelf";f.frequency.value=10000;f.gain.value=opts.highDb;node.connect(f);node=f}
+  const comp=ctx.createDynamicsCompressor();comp.threshold.value=opts.threshold;comp.knee.value=12;comp.ratio.value=opts.ratio;comp.attack.value=0.02;comp.release.value=0.18;node.connect(comp);
+  const g=ctx.createGain();g.gain.value=dbToLin(Math.min(opts.makeupDb,3))*0.25;comp.connect(g);
+  const ceil=dbToLin(opts.ceilingDb),ws=ctx.createWaveShaper(),n=2048,c=new Float32Array(n);
+  for(let i=0;i<n;i++){const u=(i/(n-1)*2-1)*4;c[i]=ceil*Math.tanh(u/(ceil+1e-6))}
+  ws.curve=c;g.connect(ws);return ws
+}
+</script>
+<script>
+/* ---- Tools / Chain UI + unified realtime preview engine ---- */
+const $=id=>document.getElementById(id);
+function bindToolToggle(btnId,obj,onChange){const b=$(btnId);const sync=()=>{b.classList.toggle("on",obj.on);b.textContent=obj.on?"On":"Off"};b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();obj.on=!obj.on;sync();onChange&&onChange()});sync();return sync}
+function bindSlider(id,obj,key,fmt,onInput){const el=$(id),out=$(id+"_v");const sync=()=>{el.value=obj[key];if(out)out.textContent=fmt(obj[key])};el.addEventListener("input",()=>{obj[key]=Number(el.value);sync();onInput&&onInput()});sync();return sync}
+// ---------- EQ UI ----------
+const eqCanvas=$("eqCanvas"),eqG=eqCanvas.getContext?eqCanvas.getContext("2d"):null;
+let eqCurveCtx=null;try{eqCurveCtx=new OfflineAudioContext(1,128,48000)}catch(e){eqCurveCtx=null}
+const EQ_W=600,EQ_H=240,EQ_DB=18,EQ_NPTS=300,eqFreqs=new Float32Array(EQ_NPTS);
+for(let i=0;i<EQ_NPTS;i++)eqFreqs[i]=20*Math.pow(1000,i/(EQ_NPTS-1));
+const eqX=f=>Math.log(f/20)/Math.log(1000)*EQ_W,eqF=x=>20*Math.pow(1000,tClamp(x/EQ_W,0,1)),eqY=g=>EQ_H/2-g/EQ_DB*(EQ_H/2-12),eqGain=y=>tClamp((EQ_H/2-y)/(EQ_H/2-12)*EQ_DB,-EQ_DB,EQ_DB);
+const EQ_COLORS=["#f472b6","#facc15","#4ade80","#22d3ee","#a78bfa"];
+function eqResponse(){
+  const tot=new Float32Array(EQ_NPTS);if(!eqCurveCtx)return tot;
+  const mag=new Float32Array(EQ_NPTS),ph=new Float32Array(EQ_NPTS);
+  tools.eq.bands.forEach(b=>{const f=eqCurveCtx.createBiquadFilter();f.type=b.type;f.frequency.value=b.f;f.gain.value=b.g;f.Q.value=eqQParam(b);f.getFrequencyResponse(eqFreqs,mag,ph);for(let i=0;i<EQ_NPTS;i++)tot[i]+=20*Math.log10(Math.max(1e-6,mag[i]))});
+  return tot
+}
+function drawEq(){
+  if(!eqG)return;const g=eqG;g.clearRect(0,0,EQ_W,EQ_H);g.fillStyle="rgba(0,0,0,.35)";g.fillRect(0,0,EQ_W,EQ_H);
+  g.strokeStyle="rgba(255,255,255,.08)";g.lineWidth=1;g.font="10px system-ui";g.fillStyle="rgba(255,255,255,.4)";
+  [50,100,200,500,1000,2000,5000,10000].forEach(f=>{const x=eqX(f);g.beginPath();g.moveTo(x,0);g.lineTo(x,EQ_H);g.stroke();g.fillText(f>=1000?f/1000+"k":f,x+2,EQ_H-4)});
+  [-12,-6,0,6,12].forEach(db=>{const y=eqY(db);g.beginPath();g.moveTo(0,y);g.lineTo(EQ_W,y);g.stroke();g.fillText((db>0?"+":"")+db,4,y-2)});
+  const r=eqResponse();g.beginPath();for(let i=0;i<EQ_NPTS;i++){const x=eqX(eqFreqs[i]),y=eqY(tClamp(r[i],-EQ_DB-6,EQ_DB+6));i?g.lineTo(x,y):g.moveTo(x,y)}
+  g.strokeStyle=tools.eq.on?"#d4a017":"rgba(212,160,23,.4)";g.lineWidth=2.5;g.stroke();
+  tools.eq.bands.forEach((b,i)=>{const x=eqX(b.f),y=eqY(b.g);g.beginPath();g.arc(x,y,i===tools.eq.sel?11:8,0,Math.PI*2);g.fillStyle=EQ_COLORS[i%5];g.globalAlpha=i===tools.eq.sel?1:.75;g.fill();g.globalAlpha=1;g.fillStyle="#000";g.font="bold 10px system-ui";g.fillText(String(i+1),x-3,y+3)});
+}
+const eqTypeSel=$("eqType");
+function syncEqEditor(){
+  const b=tools.eq.bands[tools.eq.sel];eqTypeSel.value=b.type;
+  $("eqFreq").value=Math.log(b.f/20)/Math.log(1000)*1000;$("eqFreqN").value=Math.round(b.f);
+  $("eqGain").value=b.g;$("eqGainN").value=b.g.toFixed(1);$("eqQ").value=b.q;$("eqQN").value=b.q.toFixed(2);
+  document.querySelectorAll("#eqBandTabs button").forEach((t,i)=>t.classList.toggle("active",i===tools.eq.sel));drawEq()
+}
+function eqChanged(){syncEqEditor();if(!previewLiveEq())restartPreviewSoon()}
+tools.eq.bands.forEach((b,i)=>{const t=document.createElement("button");t.type="button";t.className="band-tab";t.textContent=String(i+1);t.style.borderColor=EQ_COLORS[i%5];t.onclick=()=>{tools.eq.sel=i;syncEqEditor()};$("eqBandTabs").appendChild(t)});
+eqTypeSel.onchange=()=>{tools.eq.bands[tools.eq.sel].type=eqTypeSel.value;eqChanged()};
+$("eqFreq").oninput=e=>{tools.eq.bands[tools.eq.sel].f=20*Math.pow(1000,Number(e.target.value)/1000);eqChanged()};
+$("eqFreqN").onchange=e=>{tools.eq.bands[tools.eq.sel].f=tClamp(Number(e.target.value)||1000,20,20000);eqChanged()};
+$("eqGain").oninput=e=>{tools.eq.bands[tools.eq.sel].g=Number(e.target.value);eqChanged()};
+$("eqGainN").onchange=e=>{tools.eq.bands[tools.eq.sel].g=tClamp(Number(e.target.value)||0,-18,18);eqChanged()};
+$("eqQ").oninput=e=>{tools.eq.bands[tools.eq.sel].q=Number(e.target.value);eqChanged()};
+$("eqQN").onchange=e=>{tools.eq.bands[tools.eq.sel].q=tClamp(Number(e.target.value)||1,0.1,18);eqChanged()};
+$("eqReset").onclick=()=>{tools.eq.bands=EQ_DEFAULT_BANDS.map(b=>Object.assign({},b));eqChanged()};
+// Touch/mouse dragging of band nodes on the curve (pointer events; iPad friendly).
+let eqDrag=-1;
+function eqPt(e){const r=eqCanvas.getBoundingClientRect();return{x:(e.clientX-r.left)*EQ_W/Math.max(1,r.width),y:(e.clientY-r.top)*EQ_H/Math.max(1,r.height)}}
+eqCanvas.addEventListener("pointerdown",e=>{const p=eqPt(e);let best=-1,bd=1e9;tools.eq.bands.forEach((b,i)=>{const d=Math.hypot(eqX(b.f)-p.x,eqY(b.g)-p.y);if(d<bd){bd=d;best=i}});if(bd<40){eqDrag=best;tools.eq.sel=best;try{eqCanvas.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();syncEqEditor()}});
+eqCanvas.addEventListener("pointermove",e=>{if(eqDrag<0)return;const p=eqPt(e),b=tools.eq.bands[eqDrag];b.f=tClamp(eqF(p.x),20,20000);b.g=Math.round(eqGain(p.y)*10)/10;e.preventDefault();eqChanged()});
+const eqUp=e=>{eqDrag=-1};eqCanvas.addEventListener("pointerup",eqUp);eqCanvas.addEventListener("pointercancel",eqUp);
+eqCanvas.addEventListener("wheel",e=>{const b=tools.eq.bands[tools.eq.sel];b.q=tClamp(b.q*(e.deltaY<0?1.1:1/1.1),0.1,18);e.preventDefault();eqChanged()},{passive:false});
+bindToolToggle("eqToggle",tools.eq,()=>{drawEq();restartPreviewSoon()});
+// ---------- Saturation UI ----------
+const satKnob=$("satKnob");
+const syncSatDrive=bindSlider("satDrive",tools.sat,"drive",v=>"+"+(v*0.24).toFixed(1)+" dB",()=>{syncKnob();restartPreviewSoon()});
+function syncKnob(){satKnob.style.transform="rotate("+(-135+tools.sat.drive*2.7)+"deg)";satKnob.setAttribute("aria-valuenow",String(tools.sat.drive))}
+let knobY=null,knobV=0;
+satKnob.addEventListener("pointerdown",e=>{knobY=e.clientY;knobV=tools.sat.drive;try{satKnob.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+satKnob.addEventListener("pointermove",e=>{if(knobY===null)return;tools.sat.drive=Math.round(tClamp(knobV+(knobY-e.clientY)*0.6,0,100));syncSatDrive();syncKnob();restartPreviewSoon();e.preventDefault()});
+satKnob.addEventListener("pointerup",()=>{knobY=null});satKnob.addEventListener("pointercancel",()=>{knobY=null});
+satKnob.addEventListener("keydown",e=>{const d=e.key==="ArrowUp"||e.key==="ArrowRight"?2:e.key==="ArrowDown"||e.key==="ArrowLeft"?-2:0;if(d){tools.sat.drive=tClamp(tools.sat.drive+d,0,100);syncSatDrive();syncKnob();restartPreviewSoon();e.preventDefault()}});
+bindSlider("satTone",tools.sat,"tone",v=>v===0?"neutral":(v>0?"bright ":"dark ")+Math.abs(v),restartPreviewSoon);
+bindSlider("satMix",tools.sat,"mix",v=>v+"%",restartPreviewSoon);
+bindToolToggle("satToggle",tools.sat,restartPreviewSoon);syncKnob();
+// ---------- Space FX UI ----------
+Object.keys(FX_MODES).forEach(k=>{const b=document.createElement("button");b.type="button";b.className="preset fx-mode";b.dataset.key=k;b.textContent=FX_MODES[k].label;b.onclick=()=>{tools.fx.mode=k;syncFxModes();restartPreviewSoon()};$("fxModeGrid").appendChild(b)});
+function syncFxModes(){document.querySelectorAll(".fx-mode").forEach(b=>b.classList.toggle("active",b.dataset.key===tools.fx.mode));$("fxTail").textContent="Tail ≈ "+fxTailSeconds(tools.fx).toFixed(1)+" s"}
+["fxMix","fxFeedback","fxTime","fxMod","fxTone"].forEach(id=>{const key=id.slice(2).toLowerCase();bindSlider(id,tools.fx,key,v=>v+"%",()=>{syncFxModes();restartPreviewSoon()})});
+bindToolToggle("fxToggle",tools.fx,restartPreviewSoon);syncFxModes();
+// ---------- Auto-Master UI ----------
+const amTarget=$("amTarget");amTarget.value=String(tools.am.target);
+amTarget.onchange=()=>{tools.am.target=Number(amTarget.value);if(pv.tail)pv.tail.send({target:tools.am.target});drawMeter()};
+bindToolToggle("amToggle",tools.am,()=>{if(pv.tail)pv.tail.send({enabled:tools.am.on,reset:true});$("amReadout").textContent=tools.am.on?"Target "+tools.am.target+" LUFS · ceiling −1 dBTP":"Off"});
+$("amReadout").textContent="Off";
+// ---------- Meter UI ----------
+const meterCanvas=$("meterCanvas"),meterG=meterCanvas.getContext?meterCanvas.getContext("2d"):null,MW=600,MH=180,HIST=300;
+const mHist={m:[],s:[],src:"live"};let mExport=null;
+const fmtL=v=>isFinite(v)?v.toFixed(1):"–";
+function setMeterNumbers(s,src){
+  $("mM").textContent=fmtL(s.M);$("mS").textContent=fmtL(s.S);$("mI").textContent=fmtL(s.I);
+  $("mTP").textContent=fmtL(s.TP);$("mLRA").textContent=isFinite(s.LRA)?s.LRA.toFixed(1):"–";
+  $("mTP").parentNode.classList.toggle("over",isFinite(s.TP)&&s.TP>-1);$("meterSrc").textContent=src;
+}
+function onMeterMsg(s){if(!tools.meter.on)return;mHist.m.push(s.M);mHist.s.push(s.S);if(mHist.m.length>HIST){mHist.m.shift();mHist.s.shift()}mHist.src="live";setMeterNumbers(s,"Live preview · "+(pv.tail?pv.tail.mode:""));drawMeter()}
+function drawMeter(){
+  if(!meterG)return;const g=meterG,lo=-40,hi=0,Y=v=>MH-(tClamp(v,lo,hi)-lo)/(hi-lo)*MH;
+  g.clearRect(0,0,MW,MH);g.fillStyle="rgba(0,0,0,.4)";g.fillRect(0,0,MW,MH);g.font="10px system-ui";
+  for(let v=-36;v<=-6;v+=6){g.strokeStyle="rgba(255,255,255,.07)";g.beginPath();g.moveTo(0,Y(v));g.lineTo(MW,Y(v));g.stroke();g.fillStyle="rgba(255,255,255,.35)";g.fillText(String(v),4,Y(v)-2)}
+  g.strokeStyle="rgba(212,160,23,.7)";g.setLineDash([5,4]);g.beginPath();g.moveTo(0,Y(tools.am.target));g.lineTo(MW,Y(tools.am.target));g.stroke();g.setLineDash([]);
+  const line=(arr,n,color,w)=>{g.strokeStyle=color;g.lineWidth=w;g.beginPath();let st=false;arr.forEach((v,i)=>{const x=n<=1?0:i/(n-1)*MW;if(!isFinite(v)||v<lo){st=false;return}st?g.lineTo(x,Y(v)):g.moveTo(x,Y(v));st=true});g.stroke();g.lineWidth=1};
+  if(mHist.src==="export"&&mExport){line(mExport,mExport.length,"#22d3ee",2);g.fillStyle="rgba(255,255,255,.5)";g.fillText("Export · short-term over full track",MW-200,12)}
+  else{line(mHist.m,HIST,"rgba(244,114,182,.55)",1);line(mHist.s,HIST,"#22d3ee",2);g.fillStyle="rgba(255,255,255,.5)";g.fillText("Last 30 s · momentary (pink) · short-term (cyan)",MW-250,12)}
+}
+function showExportAnalysis(a){if(!tools.meter.on)return;mExport=a.history;mHist.src="export";setMeterNumbers(a,"Export (exact, full file)");drawMeter()}
+bindToolToggle("meterToggle",tools.meter,()=>{$("meterBody").classList.toggle("dim",!tools.meter.on)});
+$("meterReset").onclick=()=>{mHist.m=[];mHist.s=[];mHist.src="live";if(pv.tail)pv.tail.resetMeter();setMeterNumbers({M:-Infinity,S:-Infinity,I:-Infinity,TP:-Infinity,LRA:NaN},"Reset");drawMeter()};
+// ---------- Unified realtime preview: tools → immersive → preset master → auto-master → meter ----------
+const chainPreviewBtn=$("chainPreviewBtn");
+const pv={ctx:null,src:null,head:[],startAt:0,offset:0,timer:null,tail:null,tailPromise:null,live:{},peakScale:1,peakFor:null};
+function previewRunning(){return!!pv.src}
+function setPreviewLabels(on){immPreviewBtn.textContent=on?"Stop preview":"Live preview";chainPreviewBtn.textContent=on?"Stop preview":"Preview chain"}
+function currentMasterOpts(){const cfg=PRESETS[style];let high=cfg.eq_gain_high,low=cfg.eq_gain_low;if(depthOn)low+=1;if(presenceOn)high+=0.9;return{highDb:high,lowDb:low,threshold:cfg.comp_threshold,ratio:cfg.comp_ratio,makeupDb:cfg.limiter_boost,ceilingDb:-1}}
+async function ensureTail(){
+  if(pv.tail)return pv.tail;if(pv.tailPromise)return pv.tailPromise;
+  pv.tailPromise=(async()=>{const ok=await mmLoadWorklets(pv.ctx);const t=mmMakeTailNodes(pv.ctx,ok,onMeterMsg,s=>{if(tools.am.on)$("amReadout").textContent="Live · gain "+(s.gainDb>=0?"+":"")+s.gainDb.toFixed(1)+" dB · limiter "+s.grDb.toFixed(1)+" dB · out "+fmtL(s.I)+" LUFS"});
+    t.am.connect(t.me);t.me.connect(pv.ctx.destination);t.send({target:tools.am.target,enabled:tools.am.on});pv.tail=t;return t})();
+  return pv.tailPromise
+}
+function stopImmersivePreview(keepPos){
+  clearTimeout(pv.timer);
+  if(pv.src){try{pv.src.onended=null;pv.src.stop()}catch(e){}if(keepPos&&pv.ctx&&audioBuffer)pv.offset=(pv.offset+pv.ctx.currentTime-pv.startAt)%audioBuffer.duration;pv.src=null}
+  pv.head.forEach(n=>{try{n.disconnect()}catch(e){}});(pv.live.osc||[]).forEach(o=>{try{o.stop()}catch(e){}});pv.head=[];pv.live={};
+  if(!keepPos){pv.offset=0;pv.fresh=true;if(pv.tail){pv.tail.send({reset:true})}}
+  setPreviewLabels(false)
+}
+async function startImmersivePreview(){
+  if(!audioBuffer)return;
+  if(!pv.ctx)pv.ctx=new(window.AudioContext||window.webkitAudioContext)();
+  if(pv.ctx.state==="suspended")pv.ctx.resume(); // inside the tap gesture (iOS)
+  if(!player.paused)player.pause();
+  const tail=await ensureTail();
+  if(pv.src)return; // started meanwhile
+  if(pv.fresh!==false){pv.fresh=false;tail.resetMeter();mHist.m=[];mHist.s=[]}
+  if(pv.peakFor!==audioBuffer){let pk=0;for(let c=0;c<audioBuffer.numberOfChannels;c++){const d=audioBuffer.getChannelData(c);for(let i=0;i<d.length;i+=3){const a=Math.abs(d[i]);if(a>pk)pk=a}}pv.peakScale=pk>1e-6?Math.min(1,0.89/pk):1;pv.peakFor=audioBuffer}
+  const ctx=pv.ctx,src=ctx.createBufferSource();src.buffer=audioBuffer;
+  const norm=ctx.createGain();norm.gain.value=pv.peakScale;src.connect(norm);
+  let node=buildToolsGraph(ctx,norm,tools,pv.live);
+  if(immersive.enabled)node=buildImmersiveGraph(ctx,node,immersive);
+  node=buildMasterApprox(ctx,node,currentMasterOpts());
+  const st=ctx.createGain();st.channelCount=2;st.channelCountMode="explicit";st.channelInterpretation="speakers";node.connect(st);st.connect(tail.am);
+  pv.head=[src,norm,st];
+  src.onended=()=>{if(pv.src===src){pv.src=null;pv.offset=0;setPreviewLabels(false)}};
+  pv.startAt=ctx.currentTime;src.start(0,pv.offset);pv.src=src;mHist.src="live";setPreviewLabels(true)
+}
+function previewLiveEq(){return previewRunning()&&tools.eq.on&&updateLiveEq(pv.live.eq,tools.eq)}
+function restartPreviewSoon(){if(!pv.src)return;clearTimeout(pv.timer);pv.timer=setTimeout(()=>{if(pv.src){stopImmersivePreview(true);startImmersivePreview()}},180)}
+function togglePreview(){if(!audioBuffer){setStatus("Upload a mix first.","err");return}if(pv.src)stopImmersivePreview(false);else startImmersivePreview().catch(e=>setStatus("Preview failed.\n"+e.message,"err"))}
+immPreviewBtn.onclick=togglePreview;chainPreviewBtn.onclick=togglePreview;
+player.addEventListener("play",()=>{if(pv.src)stopImmersivePreview(true)});
+// preset / depth / presence changes affect the preview master stage
+document.getElementById("presetGrid").addEventListener("click",()=>restartPreviewSoon());depthBtn.addEventListener("click",()=>restartPreviewSoon());presenceBtn.addEventListener("click",()=>restartPreviewSoon());
+syncEqEditor();drawMeter();
 </script>
 </body>
 </html>

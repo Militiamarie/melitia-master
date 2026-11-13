@@ -11,6 +11,49 @@ No build step: everything (UI + audio engine) lives in `index.html`, plain HTML/
 - Chain: peak-normalize → low/high shelf EQ → gentle compressor → makeup gain (≤ 3 dB) → soft tanh ceiling at −1 dBFS → 16-bit WAV.
 - iOS-safe download (Share sheet → Save to Files, with open-in-tab fallback).
 
+## Tools / Chain
+Five tools, each in its own card with an On/Off toggle (cards collapse; tap the title).
+
+**Signal flow (live preview and export are the same):**
+
+```
+your mix → EQ → Saturation → Space FX → Immersive → preset master (shelves/comp/soft ceiling)
+        → Loudness Auto-Master (LUFS gain + true-peak limiter) → Loudness Meter (read-only) → WAV / speakers
+```
+
+Why this order: EQ/saturation/FX are *creative* tools, so they shape the raw mix before it is spatialised;
+the immersive stage then places that sound (including reverb tails) in the virtual room; the preset master
+glues it; loudness normalisation and the true-peak limiter go **last** so nothing after them can change the
+LUFS result or push peaks over −1 dBTP. The meter is non-destructive and reads the final output.
+With every tool and Immersive off, the export is bit-identical to the original mastering chain.
+
+| Tool | Inspired by | What it does |
+|---|---|---|
+| **Parametric EQ** | TDR Nova-style curve EQ | 5 bands (low shelf, 3 bells, high shelf; any band can switch to notch / HP / LP). Drag the dots on the response curve (touch/pencil/mouse, pointer events), mouse-wheel = Q, or use the per-band sliders + number boxes. Curve is drawn from `BiquadFilterNode.getFrequencyResponse()`. Changes apply live during preview. |
+| **Saturation** | Softube Saturation Knob-style | One big **Drive** knob (0–24 dB into a `tanh` `WaveShaperNode`, `oversample: "4x"`), **Tone** (dark ↔ bright tilt after the shaper) and **Mix** (parallel). Output is RMS-matched to the input so drive adds harmonics, not just level. |
+| **Space FX** | Valhalla Supermassive-style | Modes: **Echo** (ping-pong, damped feedback, tape wobble), **Chorus** (3 LFO-modulated voices per side), **Flange** (short modulated delay with feedback), **Supermassive** (4-line feedback delay network, orthogonal Hadamard mixing, per-line LFO pitch drift, damping + low-cut in every loop, long lush tails). Controls: Mix, Feedback, Time/size, Mod/drift, Tone. |
+| **Loudness Auto-Master** | LANDR-style loudness targeting | Target −14 (default, streaming), −9, −11, −16 or −23 LUFS, ceiling −1 dBTP. **Export:** integrated loudness is measured exactly from the rendered buffer (ITU-R BS.1770-4 K-weighting + gating), gain is applied, then a lookahead true-peak limiter (4× oversampled peak detection, 5 ms lookahead, smooth release) runs; it re-measures and iterates (secant steps) until the result is within ±0.1 LU. **Preview:** an AudioWorklet adapts the gain from the running loudness (≤ 6 dB/s) and compensates for limiter loss. |
+| **Loudness Meter** | Youlean Loudness Meter-style | Momentary (400 ms), short-term (3 s), integrated (gated), true peak (4× oversampled, dBTP) and LRA (EBU Tech 3342), plus a 30-second loudness history graph during preview. After an export it shows the exact numbers for the whole file and its full short-term curve. |
+
+**Realtime engine:** the meter and auto-master run in an `AudioWorklet` loaded from an inline Blob URL
+(data-URL fallback, then `ScriptProcessorNode` fallback for older browsers). The same DSP code is used for the
+worklets, the fallback and the offline export, so preview numbers and export numbers agree.
+
+**Verified** (node-web-audio-api + Node tests): 1 kHz sine at −20 dBFS stereo = −20.0 LUFS; EBU Tech 3341
+test 1 (−23 dBFS → −23.0 LUFS) and gating test (−36/−23/−36 dBFS → −23.0 LUFS); EBU Tech 3342 LRA tests (10 LU, 5 LU);
+fs/4 sine at 45° phase: sample peak −3.01 dBFS, true peak ≈ 0.0 dBTP (−0.07); auto-master lands within ±0.1 LU
+of every target with true peak ≤ −1 dBTP; Space FX stays bounded and decays at max feedback in every mode.
+
+### Tools limitations
+- “Inspired by” only: this project is **not affiliated with or endorsed by** Tokyo Dawn Records (TDR), Valhalla DSP, Softube, LANDR or Youlean. Their names are used only to describe the style of tool; none of their code or DSP is used.
+- EQ is static (no dynamic EQ bands like Nova). Web Audio shelves ignore Q.
+- Space FX is an algorithmic approximation (FDN + modulated delays), not a recreation of any commercial algorithm; there is no true pitch-shifter (the “pitch drift” comes from delay modulation, a few cents). Feedback is mapped to a decay time (max ≈ 15 s), so tails always die out; exports get extra length for the tail.
+- Live preview is an approximation of the export: immersive gain matching, the preset master, and the auto-master gain are adaptive in realtime but exact (measured) in the export. Trust the export numbers.
+- Mono files are measured as dual-mono (as most meters/streaming services do), i.e. ~3 dB higher than strict single-channel BS.1770.
+- True peak uses a 48-tap windowed-sinc 4× interpolator (BS.1770-4 Annex 2 style, not the exact ITU coefficients) — accurate to ~0.1 dB on test signals.
+- The `tanh` saturator's 4× oversampling latency is browser-dependent, so very low Mix settings can show slight comb filtering.
+- Heavy processing (long reverb + immersive + auto-master) on a long song can take several seconds on an iPad; the screen waits until it’s done.
+
 ## Immersive / spatial audio (Atmos-style approximation)
 > **Not Dolby Atmos.** This is an in-browser approximation built on the Web Audio API. It uses no Dolby SDK,
 > encoder or renderer, produces no ADM BWF / Dolby Atmos master (.atmos / DAMF), and is not Dolby-certified.
@@ -35,10 +78,10 @@ Sliders (moving one switches the preset to **Custom**):
 - **Rear / surround** — level of the decorrelated (delayed, side-derived) surround / rear-surround feeds.
 - **Binaural depth** — blend between the plain widened stereo and the HRTF virtual-speaker render.
 
-**Live preview** plays your original mix through the spatial stage in real time (with a safety limiter, no mastering EQ/comp) and re-renders when you change presets or sliders.
+**Live preview** (or **Preview chain**) plays your original mix through the *whole* chain in real time — Tools → Immersive → preset mastering → Loudness Auto-Master → Meter — and updates when you change presets, sliders or EQ (EQ moves are applied live without restarting).
 
 ### How it works
-1. 4th-order Linkwitz-Riley crossover at 120 Hz — lows stay **mono and dry** (808s and kicks keep their weight and mono compatibility).
+1. 4th-order Linkwitz-Riley crossover at 120 Hz (two cascaded Butterworth filters; Web Audio lowpass/highpass `Q` is specified in dB, so −3.01 dB is used) — lows stay **mono and dry** (808s and kicks keep their weight and mono compatibility).
 2. Mid/side matrix with width control → L′/R′.
 3. Upmix into virtual speaker feeds: L, R, C (mid), side/rear surrounds (side signal + some L′/R′, 11–23 ms delays, low-passed), 4 tops (high-passed > 1.5 kHz, short delays, height EQ).
 4. Each virtual speaker → `PannerNode` (`panningModel: "HRTF"`) at its 5.1 / 7.1.4 azimuth/elevation → binaural stereo sum.

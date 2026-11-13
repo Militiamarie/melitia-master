@@ -1,4 +1,4 @@
-const CACHE_NAME = 'melitia-master-v2';
+const CACHE_NAME = 'melitia-master-v3';
 const ASSETS = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (e) => {
