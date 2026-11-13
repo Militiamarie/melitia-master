@@ -1,7 +1,18 @@
 # Melitia Master
 AI Online Mastering App — installable on phone.
 
-Static PWA. Deploy to Vercel by pushing this folder or linking the project.
+Static PWA. Live at **https://militiamarie.github.io/melitia-master/** (GitHub Pages from `main`, root; `.nojekyll` keeps files served as-is).
+All app URLs are relative, so it also works from any subfolder or on Vercel/Netlify.
+
+## Install as an app
+- **iPad / iPhone (Safari):** open the link → tap **Share** (square with arrow) → **Add to Home Screen** → **Add**. Launch it from the home-screen icon (full screen, no Safari bars).
+- **Android / Chrome / Edge desktop:** open the link → **Install app** (address-bar icon or ⋮ menu).
+- Works offline after the first visit (app shell is cached). Your audio never leaves the device.
+- When a new version is published you'll see **Update available → Reload**.
+
+PWA files: `manifest.json` (name, start_url/scope `./`, standalone, icons incl. maskable), `sw.js`
+(precache app shell; network-first for the page with offline fallback; stale-while-revalidate for other assets;
+bump `VERSION` on each release), `icons/` (192/512, maskable 192/512, apple-touch-icon 180, favicon 32).
 No build step: everything (UI + audio engine) lives in `index.html`, plain HTML/CSS/vanilla JS + Web Audio API.
 
 ## Mastering

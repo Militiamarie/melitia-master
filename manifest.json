@@ -1,23 +1,19 @@
 {
-  "name": "Melitia Master",
-  "short_name": "MelitiaMaster",
-  "description": "AI Online Mastering — Waves & Sony style",
-  "start_url": "/",
+  "id": "./",
+  "name": "Militia Master",
+  "short_name": "Militia Master",
+  "description": "AI online mastering, immersive audio and mix tools — works offline once installed",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#ff00aa",
+  "orientation": "any",
+  "background_color": "#0c0a09",
+  "theme_color": "#0c0a09",
+  "categories": ["music", "productivity"],
   "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

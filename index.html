@@ -4,13 +4,22 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Militia Master" />
+<meta name="application-name" content="Militia Master" />
 <meta name="theme-color" content="#0c0a09" />
+<meta name="description" content="AI online mastering, immersive audio and mix tools — installable, works offline." />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <title>Melitia Master</title>
 <style>
 :root{--panel:rgba(28,25,23,.9);--line:rgba(68,64,60,.9);--text:#fafaf9;--muted:#d6d3d1;--gold:#d4a017}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
-body{max-width:480px;margin:0 auto;padding:20px 16px 40px;background:#0c0a09 linear-gradient(180deg,rgba(80,10,40,.45),rgba(12,10,9,.95))}
+body{max-width:480px;margin:0 auto;padding:20px 16px 40px;padding-top:calc(20px + env(safe-area-inset-top));padding-bottom:calc(40px + env(safe-area-inset-bottom));background:#0c0a09 linear-gradient(180deg,rgba(80,10,40,.45),rgba(12,10,9,.95))}
 header{text-align:center;padding:12px 0 20px}
 .wordmark{font-size:22px;font-weight:700;letter-spacing:.2em;color:var(--gold);text-transform:uppercase}
 .tag{color:var(--muted);font-size:13px;margin-top:6px}
@@ -81,6 +90,9 @@ button.ghost.small{padding:9px;font-size:13px}
 .meter-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;font-size:12px;color:var(--muted)}
 .meter-foot button{width:auto}
 #meterBody.dim{opacity:.4}
+.update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:50;display:flex;gap:10px;align-items:center;background:#1c1917;border:1px solid var(--gold);border-radius:14px;padding:10px 12px;box-shadow:0 8px 30px rgba(0,0,0,.6);font-size:14px;max-width:calc(100% - 24px)}
+.update-bar button{border:0;border-radius:10px;padding:8px 12px;font-weight:700;background:var(--gold);color:#1c1400;-webkit-appearance:none}
+.update-bar button.x{background:transparent;color:var(--muted);padding:8px}
 </style>
 </head>
 <body>
@@ -891,6 +903,25 @@ player.addEventListener("play",()=>{if(pv.src)stopImmersivePreview(true)});
 // preset / depth / presence changes affect the preview master stage
 document.getElementById("presetGrid").addEventListener("click",()=>restartPreviewSoon());depthBtn.addEventListener("click",()=>restartPreviewSoon());presenceBtn.addEventListener("click",()=>restartPreviewSoon());
 syncEqEditor();drawMeter();
+</script>
+<div class="update-bar hidden" id="updateBar" role="status"><span>Update available</span><button type="button" id="updateReload">Reload</button><button type="button" class="x" id="updateDismiss" aria-label="Dismiss">✕</button></div>
+<script>
+/* ---- Installable app: service worker registration + update prompt ---- */
+(function(){
+  if(!("serviceWorker" in navigator))return;
+  const bar=document.getElementById("updateBar");
+  document.getElementById("updateReload").onclick=()=>location.reload();
+  document.getElementById("updateDismiss").onclick=()=>bar.classList.add("hidden");
+  const hadController=!!navigator.serviceWorker.controller;
+  // sw.js calls skipWaiting(); when a new version takes control of an already-running page, offer a reload
+  // (no auto-reload so an in-progress master or preview isn't lost).
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(hadController)bar.classList.remove("hidden")});
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js",{scope:"./"}).then(reg=>{
+      document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")reg.update().catch(()=>{})});
+    }).catch(e=>console.warn("Service worker registration failed",e));
+  });
+})();
 </script>
 </body>
 </html>
