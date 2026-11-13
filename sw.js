@@ -1,9 +1,9 @@
-/* Militia Master service worker
+/* Melitia Master service worker
    - precaches the app shell (relative URLs → works under /melitia-master/ on GitHub Pages)
    - navigations / index.html: network-first, cache fallback (offline)
    - other same-origin GETs: stale-while-revalidate
    Bump VERSION on every release so old caches are purged. */
-const VERSION = 'militia-master-v4';
+const VERSION = 'melitia-master-v5';
 const SHELL = [
   './',
   './index.html',
