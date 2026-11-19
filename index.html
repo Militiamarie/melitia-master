@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Melitia Master" />
 <meta name="application-name" content="Melitia Master" />
 <meta name="theme-color" content="#0c0a09" />
-<meta name="description" content="AI online mastering, immersive audio and mix tools — installable, works offline." />
+<meta name="description" content="AI online mastering, VoxBox vocal tools, immersive audio and mix tools — installable, works offline." />
 <link rel="manifest" href="manifest.json" />
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
@@ -105,10 +105,14 @@ button.ghost.small{padding:9px;font-size:13px}
 .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:50;display:flex;gap:10px;align-items:center;background:#1c1917;border:1px solid var(--gold);border-radius:14px;padding:10px 12px;box-shadow:0 8px 30px rgba(0,0,0,.6);font-size:14px;max-width:calc(100% - 24px)}
 .update-bar button{border:0;border-radius:10px;padding:8px 12px;font-weight:700;background:var(--gold);color:#1c1400;-webkit-appearance:none}
 .update-bar button.x{background:transparent;color:var(--muted);padding:8px}
+.vox-badge{color:#7dd3fc;border-color:rgba(125,211,252,.45)}
+.vox-sub{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin:14px 0 8px}
+#voxPreviewBtn,#voxToggle{width:100%;margin-bottom:10px}
+#voxPresetGrid{margin-top:10px}
 </style>
 </head>
 <body>
-<header><div class="wordmark">Melitia Master</div><div class="tag">auto master · clean gain</div></header>
+<header><div class="wordmark">Melitia Master</div><div class="tag">auto master · voxbox · clean gain</div></header>
 <div class="card"><label class="section">Your mix</label>
 <div class="upload-zone" id="dropZone"><strong>Tap to upload</strong><span>WAV, MP3, M4A, FLAC, AIFF</span></div>
 <input type="file" id="fileInput" accept="audio/*,.wav,.mp3,.m4a,.flac,.aiff,.aif" />
@@ -140,9 +144,43 @@ button.ghost.small{padding:9px;font-size:13px}
 <p class="hint" id="immHint"></p>
 <p class="hint">In-browser spatial approximation (Web Audio HRTF virtual speakers). Not certified Dolby Atmos; no Dolby SDK. Exports a stereo/binaural WAV — use headphones for Binaural/Immersive.</p>
 <button type="button" class="ghost" id="immPreviewBtn">Live preview</button></div>
+<div class="card" id="voxCard"><div class="imm-head"><label class="section">VoxBox</label><span class="imm-badge vox-badge">vocal chain · original</span></div>
+<button type="button" class="toggle" id="voxToggle">VoxBox: OFF</button>
+<div class="presets" id="voxPresetGrid"></div>
+<p class="hint" id="voxHint">Vocal plugins for a lead or voice take: EQ, de-esser, compressor, gate, warmth, doubler, plus Valhalla-style plate / hall / room and vintage delay (original in-browser processors — not affiliated with ValhallaDSP or Waves). All time-domain, no pitch correction, no shimmer. Bypass is complete when VoxBox is off. Preview chain includes this stage.</p>
+<button type="button" class="ghost" id="voxPreviewBtn">Preview chain</button></div>
+<details class="card tool" id="voxEqCard"><summary><span class="tool-title">Vocal EQ<small>HPF · body · nasal · presence · air</small></span><button type="button" class="toggle tool-toggle" id="voxEqToggle">Off</button></summary>
+<canvas id="voxEqCanvas" class="eq-canvas" width="600" height="140" aria-label="Vocal EQ curve"></canvas>
+<div class="sliders" id="voxEqRows"></div>
+<button type="button" class="ghost small" id="voxEqFlat" style="margin-top:10px">Flatten</button>
+<p class="hint">Broad musical bands only (no narrow resonant boosts). High-pass is 12 dB/oct. Smart-friendly: leave this off when you are mastering a full mix rather than a vocal.</p></details>
+<details class="card tool" id="voxDessCard"><summary><span class="tool-title">Vocal De-esser<small>split-band · 5–10 kHz</small></span><button type="button" class="toggle tool-toggle" id="voxDessToggle">Off</button></summary>
+<div class="sliders" id="voxDessRows"></div>
+<p class="hint">Same split-band design as the studio de-esser: only the sibilant band is turned down on S / T / SH peaks, with a smooth cap so it never lisps.</p><p class="hint" id="voxDessStat"></p></details>
+<details class="card tool" id="voxCompCard"><summary><span class="tool-title">Vocal Comp<small>smooth gain · sidechain HPF · mix</small></span><button type="button" class="toggle tool-toggle" id="voxCompToggle">Off</button></summary>
+<div class="sliders" id="voxCompRows"></div>
+<p class="hint">Stereo-linked, 120 Hz sidechain high-pass, soft knee, gain reduction smoothly capped at Max GR, plus makeup and mix for parallel compression. No waveshaping.</p><p class="hint" id="voxCompStat"></p></details>
+<details class="card tool" id="voxGateCard"><summary><span class="tool-title">Gate / Expander<small>downward expander · smooth · no chatter</small></span><button type="button" class="toggle tool-toggle" id="voxGateToggle">Off</button></summary>
+<div class="sliders" id="voxGateRows"></div>
+<p class="hint">Turns the noise floor down between phrases. Soft-knee downward expander with a 120 Hz detector high-pass, double-smoothed gain (no zipper, no hard mute). Range caps how far it can close.</p><p class="hint" id="voxGateStat"></p></details>
+<details class="card tool" id="voxWarmCard"><summary><span class="tool-title">Warmth<small>gentle tanh · 4× oversampled</small></span><button type="button" class="toggle tool-toggle" id="voxWarmToggle">Off</button></summary>
+<div class="sliders" id="voxWarmRows"></div>
+<p class="hint">The same level-matched, 4×-oversampled saturator as the mix Saturation tool, with milder vocal defaults. Darker Tone = warmer, not brighter grit.</p></details>
+<details class="card tool" id="voxDoubleCard"><summary><span class="tool-title">Doubler<small>Haas delays · no pitch shift</small></span><button type="button" class="toggle tool-toggle" id="voxDoubleToggle">Off</button></summary>
+<div class="sliders" id="voxDoubleRows"></div>
+<p class="hint">Short left/right delays (about 12–30 ms) and a tiny time wobble, high-passed so the double stays out of the way. Time-domain only — no detune, no robot sound.</p></details>
+<details class="card tool" id="voxSpaceCard"><summary><span class="tool-title">V-Space (Valhalla-style)<small>plate · hall · room · vintage delay · shimmer-free</small></span><button type="button" class="toggle tool-toggle" id="voxSpaceToggle">Off</button></summary>
+<div class="presets fx-grid" id="voxSpaceGrid"></div>
+<p class="vox-sub">Reverb</p>
+<div class="slider-row"><label for="voxVerbMode">Mode</label><select id="voxVerbMode"><option value="plate">Plate</option><option value="hall">Hall</option><option value="room">Room</option></select><span></span></div>
+<div class="sliders" id="voxVerbRows"></div>
+<p class="vox-sub">Delay</p>
+<div class="slider-row"><label for="voxDelayMode">Mode</label><select id="voxDelayMode"><option value="vintage">Vintage</option><option value="pingpong">Ping-pong</option><option value="slap">Slapback</option></select><span></span></div>
+<div class="sliders" id="voxDelayRows"></div>
+<p class="hint" id="voxSpaceHint">ValhallaDSP has no web SDK. These are original in-browser processors written for this app (dense FDN plate / hall / room and a damped vintage delay). They contain no Valhalla code, and this project is not affiliated with or endorsed by ValhallaDSP. Tails are time-domain only — no pitch-shifted shimmer, no spectral effects.</p></details>
 <div class="card chain-card" id="chainCard"><label class="section">Tools / Chain</label>
-<div class="chain-flow"><span>EQ</span>→<span>Saturation</span>→<span>Space FX</span>→<span>Immersive</span>→<span>Preset master</span>→<span>Clean-Up</span>→<span>Mono Bass</span>→<span>Corrective EQ</span>→<span>Dynamic EQ</span>→<span>De-esser</span>→<span>Multiband</span>→<span>Glue</span>→<span>Loudness + Ultra Limiter</span>→<span>Dither</span>→<span>Meter</span></div>
-<p class="hint">Tools run first (on your raw mix), then immersive, then the preset mastering above (switch it off for the clean path), then the studio chain, then loudness normalisation + true-peak limiting last so the LUFS target and −1 dBTP ceiling hold, then dither on the 16-bit file. The meter only reads. Same order in live preview and export. Any card that is off is bypassed completely.</p>
+<div class="chain-flow"><span>VoxBox</span>→<span>EQ</span>→<span>Saturation</span>→<span>Space FX</span>→<span>Immersive</span>→<span>Preset master</span>→<span>Clean-Up</span>→<span>Mono Bass</span>→<span>Corrective EQ</span>→<span>Dynamic EQ</span>→<span>De-esser</span>→<span>Multiband</span>→<span>Glue</span>→<span>Loudness + Ultra Limiter</span>→<span>Dither</span>→<span>Meter</span></div>
+<p class="hint">VoxBox runs first when it is on (vocal chain on your take), then Tools (EQ / Saturation / Space FX), then immersive, then the preset mastering above (switch it off for the clean path), then the studio chain, then loudness normalisation + true-peak limiting last so the LUFS target and −1 dBTP ceiling hold, then dither on the 16-bit file. The meter only reads. Same order in live preview and export. Any card that is off is bypassed completely.</p>
 <button type="button" class="ghost" id="chainPreviewBtn">Preview chain</button></div>
 <details class="card tool" id="eqCard" open><summary><span class="tool-title">Parametric EQ<small>5 bands · Nova-style curve · drag the dots</small></span><button type="button" class="toggle tool-toggle" id="eqToggle">Off</button></summary>
 <canvas id="eqCanvas" class="eq-canvas" width="600" height="240" aria-label="EQ response curve. Drag a band dot to change frequency and gain."></canvas>
@@ -397,7 +435,7 @@ function dbToLin(db){return Math.pow(10,db/20)}
 function analyzeMix(buffer){const ch=buffer.numberOfChannels,len=buffer.length,sr=buffer.sampleRate;const mono=new Float32Array(len);for(let c=0;c<ch;c++){const d=buffer.getChannelData(c);for(let i=0;i<len;i++)mono[i]+=d[i]/ch}let peak=0,sumSq=0;for(let i=0;i<len;i++){const a=Math.abs(mono[i]);if(a>peak)peak=a;sumSq+=mono[i]*mono[i]}const rms=Math.sqrt(sumSq/len),crest=peak/(rms+1e-9);let lowE=0,highE=0,midE=0,lp=0,hp=0;const aL=Math.exp(-2*Math.PI*200/sr),aH=Math.exp(-2*Math.PI*4000/sr),step=Math.max(1,Math.floor(len/80000));let n=0;for(let i=0;i<len;i+=step){const x=mono[i];lp=aL*lp+(1-aL)*x;hp=aH*(hp+x-(mono[i-step]||0));const mid=x-lp;lowE+=lp*lp;highE+=hp*hp;midE+=mid*mid;n++}lowE/=n;highE/=n;midE/=n;const tot=lowE+midE+highE+1e-12;return{peak,rms,crest,lowRatio:lowE/tot,highRatio:highE/tot}}
 function pickAutoRecipe(stats){let key="Precise",depth=false,presence=false,note="";if(stats.crest>8){key="Organic";note="Open dynamics → Organic"}else if(stats.crest<4.5){key="Raw";note="Dense mix → Raw polish"}else if(stats.highRatio<0.12){key="Vocal";presence=true;note="Dark top → Vocal + Presence"}else if(stats.lowRatio>0.45){key="Bass";note="Heavy low → 808 Weight"}else if(stats.rms<0.08&&stats.peak<0.5){key="Elevated";note="Quiet mix → Elevated"}else{key="Precise";note="Balanced → Precise"}return{key,depth,presence,note}}
 function normalizePeak(buffer,targetPeak){let peak=0;for(let c=0;c<buffer.numberOfChannels;c++){const d=buffer.getChannelData(c);for(let i=0;i<d.length;i++){const a=Math.abs(d[i]);if(a>peak)peak=a}}if(peak<1e-6)return buffer;const scale=Math.min(1,targetPeak/peak);if(scale>=0.999)return buffer;const out=new AudioBuffer({length:buffer.length,numberOfChannels:buffer.numberOfChannels,sampleRate:buffer.sampleRate});for(let c=0;c<buffer.numberOfChannels;c++){const src=buffer.getChannelData(c),dst=out.getChannelData(c);for(let i=0;i<src.length;i++)dst[i]=src[i]*scale}return out}
-async function renderPreStudio(opts,label){let srcBuf=audioBuffer;if(toolsActive()){setStatus("Tools · "+toolsLabel().slice(3)+"…");await new Promise(r=>setTimeout(r,30));srcBuf=await renderTools(audioBuffer,tools);label+=toolsLabel()}if(immersive.enabled){setStatus("Spatial render · "+label+immersiveLabel()+"…");await new Promise(r=>setTimeout(r,30));srcBuf=await renderImmersive(srcBuf,immersive);label+=immersiveLabel();setStatus("Mastering · "+label+"…")}let buf;if(typeof presetStage==="undefined"||presetStage.on)buf=await renderMaster(srcBuf,opts);else{buf=normalizePeak(srcBuf,0.89);label+=" · clean path"}return{buf,label}}
+async function renderPreStudio(opts,label){let srcBuf=audioBuffer;if(voxActive()){setStatus("VoxBox · "+voxLabel().slice(3)+"…");await new Promise(r=>setTimeout(r,30));srcBuf=await renderVox(srcBuf,voxSnapshot());label+=voxLabel()}if(toolsActive()){setStatus("Tools · "+toolsLabel().slice(3)+"…");await new Promise(r=>setTimeout(r,30));srcBuf=await renderTools(srcBuf,tools);label+=toolsLabel()}if(immersive.enabled){setStatus("Spatial render · "+label+immersiveLabel()+"…");await new Promise(r=>setTimeout(r,30));srcBuf=await renderImmersive(srcBuf,immersive);label+=immersiveLabel();setStatus("Mastering · "+label+"…")}let buf;if(typeof presetStage==="undefined"||presetStage.on)buf=await renderMaster(srcBuf,opts);else{buf=normalizePeak(srcBuf,0.89);label+=" · clean path"}return{buf,label}}
 async function finishMaster(offline,label,smart){let loudNote="";if(studioActive()){const r=await renderStudio(offline,studioSnapshot(),null,f=>setStatus("Studio chain"+studioLabel()+" · "+Math.round(f*100)+"%"));offline=r.buffer;showStudioStats(r.stats);label+=studioLabel()}const limOpt=studio.lim.on?{ultra:true,release:studio.lim.release}:null,ceiling=studio.lim.on?studio.lim.ceiling:tools.am.ceiling;if(tools.am.on){setStatus("Loudness · measuring + limiting to "+tools.am.target+" LUFS…");await new Promise(r=>setTimeout(r,30));let target=tools.am.target,am=smart&&limOpt?null:limOpt?autoMasterBuffer(offline,target,ceiling,limOpt):autoMasterBuffer(offline,tools.am.target,tools.am.ceiling),held="";if(smart&&limOpt){const ex=smartExcerpt(offline),eb=new AudioBuffer({length:ex.L.length,numberOfChannels:2,sampleRate:offline.sampleRate});eb.copyToChannel(ex.L,0);eb.copyToChannel(ex.R,1);
   let lh=0;const loss=(a,t)=>Math.max(0,a.gainDb-(t-a.before.I)),run=t=>{const a=autoMasterBuffer(eb,t,ceiling,Object.assign({},limOpt,{lossHint:lh}));lh=loss(a,t);return a};
   const a0=run(target);let hint=loss(a0,target);
@@ -411,7 +449,7 @@ masterBtn.onclick=async()=>{if(!audioBuffer)return;const cfg=PRESETS[style];let 
 playBtn.onclick=async()=>{if(!masterUrl)return;try{if(player.paused){await player.play();playBtn.textContent="Pause"}else{player.pause();playBtn.textContent="Play"}}catch(e){setStatus("Playback blocked. Tap Play again.\n"+e.message,"err")}};
 player.onended=()=>{playBtn.textContent="Play"};
 player.onpause=()=>{if(player.currentTime<player.duration)playBtn.textContent="Play"};
-downloadBtn.onclick=async()=>{if(!masterBlob||!masterUrl){setStatus("Nothing to download yet.","err");return}const fname="melitia_master_"+style.toLowerCase()+(immersive.enabled?"_immersive_"+immersive.preset.toLowerCase():"")+(tools.am.on?"_"+Math.abs(tools.am.target)+"lufs":"")+(studioActive()||studio.lim.on?"_studio":"")+".wav";try{if(navigator.canShare&&navigator.canShare({files:[new File([masterBlob],fname,{type:"audio/wav"})]})){await navigator.share({files:[new File([masterBlob],fname,{type:"audio/wav"})],title:fname});setStatus("Shared · Save to Files","ok");return}}catch(e){if(e&&e.name==="AbortError")return}try{const w=window.open(masterUrl,"_blank");if(w){setStatus("Opened · Share → Save to Files","ok");return}}catch(e){}const a=document.createElement("a");a.href=masterUrl;a.download=fname;document.body.appendChild(a);a.click();a.remove();setStatus("Download started","ok")};
+downloadBtn.onclick=async()=>{if(!masterBlob||!masterUrl){setStatus("Nothing to download yet.","err");return}const fname="melitia_master_"+style.toLowerCase()+(immersive.enabled?"_immersive_"+immersive.preset.toLowerCase():"")+(tools.am.on?"_"+Math.abs(tools.am.target)+"lufs":"")+(typeof voxActive==="function"&&voxActive()?"_vox":"")+(studioActive()||studio.lim.on?"_studio":"")+".wav";try{if(navigator.canShare&&navigator.canShare({files:[new File([masterBlob],fname,{type:"audio/wav"})]})){await navigator.share({files:[new File([masterBlob],fname,{type:"audio/wav"})],title:fname});setStatus("Shared · Save to Files","ok");return}}catch(e){if(e&&e.name==="AbortError")return}try{const w=window.open(masterUrl,"_blank");if(w){setStatus("Opened · Share → Save to Files","ok");return}}catch(e){}const a=document.createElement("a");a.href=masterUrl;a.download=fname;document.body.appendChild(a);a.click();a.remove();setStatus("Download started","ok")};
 async function renderMaster(buffer,opts){buffer=normalizePeak(buffer,0.89);const sr=buffer.sampleRate,len=buffer.length,ch=buffer.numberOfChannels;const offline=new OfflineAudioContext(ch,len,sr);const source=offline.createBufferSource();source.buffer=buffer;let node=source;if(opts.lowDb!==0){const lowShelf=offline.createBiquadFilter();lowShelf.type="lowshelf";lowShelf.frequency.value=180;lowShelf.gain.value=opts.lowDb;node.connect(lowShelf);node=lowShelf}if(opts.highDb!==0){const highShelf=offline.createBiquadFilter();highShelf.type="highshelf";highShelf.frequency.value=10000;highShelf.gain.value=opts.highDb;node.connect(highShelf);node=highShelf}const comp=offline.createDynamicsCompressor();comp.threshold.value=opts.threshold;comp.knee.value=12;comp.ratio.value=opts.ratio;comp.attack.value=0.02;comp.release.value=0.18;node.connect(comp);const gain=offline.createGain();gain.gain.value=dbToLin(Math.min(opts.makeupDb,3));comp.connect(gain);gain.connect(offline.destination);source.start(0);const rendered=await offline.startRendering();const ceiling=dbToLin(opts.ceilingDb);const out=offline.createBuffer(ch,len,sr);for(let c=0;c<ch;c++){const src=rendered.getChannelData(c),dst=out.getChannelData(c);for(let i=0;i<len;i++)dst[i]=ceiling*Math.tanh(src[i]/(ceiling+1e-6))}return out}
 function bufferToWavBlob(buffer){const numCh=buffer.numberOfChannels,sr=buffer.sampleRate,numFrames=buffer.length;const blockAlign=numCh*2,dataSize=numFrames*blockAlign;const ab=new ArrayBuffer(44+dataSize);const view=new DataView(ab);function writeStr(o,s){for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i))}writeStr(0,"RIFF");view.setUint32(4,36+dataSize,true);writeStr(8,"WAVE");writeStr(12,"fmt ");view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,numCh,true);view.setUint32(24,sr,true);view.setUint32(28,sr*blockAlign,true);view.setUint16(32,blockAlign,true);view.setUint16(34,16,true);writeStr(36,"data");view.setUint32(40,dataSize,true);let offset=44;const channels=[];for(let c=0;c<numCh;c++)channels.push(buffer.getChannelData(c));for(let i=0;i<numFrames;i++){for(let c=0;c<numCh;c++){let s=Math.max(-1,Math.min(1,channels[c][i]));view.setInt16(offset,s<0?s*0x8000:s*0x7fff,true);offset+=2}}return new Blob([ab],{type:"audio/wav"})}
 </script>
@@ -687,7 +725,7 @@ function autoMasterBuffer(buffer,targetLufs,ceilingDb,limOpt){
 function limitOnlyBuffer(buffer,ceilingDb,limOpt){const before=analyzeLoudness(buffer);if(!isFinite(before.I))return{buffer,before,after:before,gainDb:0,grDb:0};return autoMasterBuffer(buffer,before.I,ceilingDb,Object.assign({},limOpt,{fixedGain:true}))}
 
 /* ==========================================================================
-   TOOLS / CHAIN — EQ → Saturation → Space FX → (Immersive) → Mastering preset
+   TOOLS / CHAIN — (VoxBox) → EQ → Saturation → Space FX → (Immersive) → Mastering preset
    → Loudness Auto-Master (LUFS + true-peak limiter) → Loudness Meter
    Graph builders are context-agnostic (AudioContext + OfflineAudioContext).
    ========================================================================== */
@@ -836,7 +874,11 @@ function mmWorkletSource(){
   "const MMS=("+MM_STUDIO_SOURCE.toString()+")();\n"+
   "class MMStudio extends AudioWorkletProcessor{constructor(o){super();this.d=new MMS.StudioDSP(sampleRate,(o.processorOptions||{}).s||{})}\n"+
   "process(inputs,outputs){const i=inputs[0],o=outputs[0];const n=o[0].length;if(!i||!i.length){for(let c=0;c<o.length;c++)o[c].fill(0);return true}this.d.process([i[0],i[1]||i[0]],[o[0],o[1]||new Float32Array(n)],n,0);return true}}\n"+
-  "registerProcessor('mm-studio',MMStudio);\n"
+  "registerProcessor('mm-studio',MMStudio);\n"+
+  "const MMV=("+MM_VOX_SOURCE.toString()+")(MMS);\n"+
+  "class MMVox extends AudioWorkletProcessor{constructor(o){super();this.d=new MMV.VoxDSP(sampleRate,(o.processorOptions||{}).v||{})}\n"+
+  "process(inputs,outputs){const i=inputs[0],o=outputs[0];const n=o[0].length;if(!i||!i.length){for(let c=0;c<o.length;c++)o[c].fill(0);return true}this.d.process([i[0],i[1]||i[0]],[o[0],o[1]||new Float32Array(n)],n,0);return true}}\n"+
+  "registerProcessor('mm-vox',MMVox);\n"
 }
 async function mmLoadWorklets(ctx){
   if(!ctx.audioWorklet||typeof AudioWorkletNode==="undefined")return false;
@@ -1009,6 +1051,310 @@ function MM_STUDIO_SOURCE(){
 const MMS=MM_STUDIO_SOURCE();
 </script>
 <script>
+/* ==========================================================================
+   VOXBOX — vocal chain + Valhalla-style space (original, time-domain)
+   --------------------------------------------------------------------------
+   Processors are original in-browser designs. Waves Audio and ValhallaDSP
+   have no web SDKs; this project is not affiliated with or endorsed by
+   either. No FFT, no phase vocoder, no pitch correction, no shimmer
+   (no pitch-shifted reverb tails). Dynamics use the same smooth
+   attack/release + second one-pole stage as the studio chain.
+   Signal flow (when VoxBox is on): gate → vocal EQ → de-esser → compressor
+   → warmth → doubler → reverb send → delay send → (rest of the app chain).
+   ========================================================================== */
+function MM_VOX_SOURCE(MMS){
+  "use strict";
+  const coefs=MMS.coefs,Biquad=MMS.Biquad;
+  const tc=(ms,sr)=>Math.exp(-1/Math.max(1,ms*sr/1000));
+  const dB=p=>10*Math.log10(p+1e-20);
+  function kneeGr(over,ratio,knee){const s=1-1/ratio;if(over<=-knee/2)return 0;if(over<knee/2){const u=over+knee/2;return s*u*u/(2*knee)}return s*over}
+  class GrSmoother{constructor(sr,att,rel,post){this.a=tc(att,sr);this.r=tc(rel,sr);this.p=tc(post||2,sr);this.g1=0;this.g2=0}
+    run(t){this.g1=t+(this.g1-t)*(t>this.g1?this.a:this.r);this.g2=this.g1+(this.g2-this.g1)*this.p;return this.g2}}
+  class Stat{constructor(){this.max=0;this.sum=0;this.n=0}add(v){if(v>this.max)this.max=v;this.sum+=v;this.n++}get(){return{max:this.max,avg:this.n?this.sum/this.n:0}}}
+  const ACT=1e-7;
+  // Downward expander: closes smoothly below threshold, range-capped, never a hard mute.
+  class Gate{
+    constructor(sr,p){this.thr=Number(p.thr);this.range=Math.max(0,Number(p.range)||12);this.ratio=Math.max(1.01,Number(p.ratio)||2);
+      this.sc=new Biquad(coefs("highpass",120,sr,0.7071));this.ce=tc(8,sr);this.e=0;
+      this.sm=new GrSmoother(sr,Math.max(0.2,Number(p.attack)||2),Math.max(20,Number(p.release)||80),3);this.stat=new Stat();this.gr=0}
+    frame(x){const s=this.sc.run((x[0]+x[1])*0.5),p=s*s;this.e=p+(this.e-p)*this.ce;
+      let t=0;const lv=dB(this.e)+3.01,under=this.thr-lv;
+      if(this.range>0&&under>-3){const s=this.ratio-1,kn=6;if(under<=-kn/2)t=0;else if(under<kn/2){const u=under+kn/2;t=s*u*u/(2*kn)}else t=s*under;t=this.range*Math.tanh(Math.max(0,t)/this.range)}
+      const gr=this.sm.run(t);this.gr=gr;if(this.e>ACT||gr>0.1)this.stat.add(gr);
+      if(gr>1e-6){const g=Math.pow(10,-gr/20);x[0]*=g;x[1]*=g}}
+  }
+  const VEQ_BANDS=[{t:"peaking",f:220,q:0.8,k:"body",n:"Body"},{t:"peaking",f:900,q:1.0,k:"nasal",n:"Nasal"},{t:"peaking",f:4000,q:0.8,k:"presence",n:"Presence"},{t:"highshelf",f:11000,q:0.7071,k:"air",n:"Air"}];
+  class VocalEQ{
+    constructor(sr,p){this.f=[[],[]];
+      const hpf=Math.max(40,Math.min(240,Number(p.hpf)||80));
+      for(let c=0;c<2;c++){this.f[c].push(new Biquad(coefs("highpass",hpf,sr,0.7071)));
+        VEQ_BANDS.forEach(b=>{const g=Math.max(-8,Math.min(8,Number(p[b.k])||0));if(Math.abs(g)>=0.05)this.f[c].push(new Biquad(coefs(b.t,b.f,sr,b.q,g)))})}
+    }
+    frame(x){for(let c=0;c<2;c++){let v=x[c];const f=this.f[c];for(let j=0;j<f.length;j++)v=f[j].run(v);x[c]=v}}
+  }
+  // Split-band de-esser (same structure as the studio DynBand).
+  class Dess{
+    constructor(sr,p){const f=Math.max(4000,Math.min(10000,p.freq||7000));
+      this.bp=[new Biquad(coefs("bandpass",f,sr,1.0)),new Biquad(coefs("bandpass",f,sr,1.0))];
+      this.thr=Number(p.thr);this.max=Math.max(0,p.max||0);this.ratio=4;this.ce=tc(3,sr);this.eb=0;this.ef=0;
+      this.sm=new GrSmoother(sr,1.5,60,2);this.stat=new Stat();this.gr=0}
+    frame(x){const bl=this.bp[0].run(x[0]),br=this.bp[1].run(x[1]);
+      const pb=(bl*bl+br*br)*0.5,pf=(x[0]*x[0]+x[1]*x[1])*0.5;this.eb=pb+(this.eb-pb)*this.ce;this.ef=pf+(this.ef-pf)*this.ce;
+      let t=0;const act=this.ef>ACT;
+      if(act&&this.max>0){t=kneeGr((dB(this.eb)-dB(this.ef))-this.thr,this.ratio,4);t=this.max*Math.tanh(t/this.max)}
+      const gr=this.sm.run(t);this.gr=gr;if(act)this.stat.add(gr);
+      if(gr>1e-6){const k=1-Math.pow(10,-gr/20);x[0]-=k*bl;x[1]-=k*br}}
+  }
+  // Vocal compressor: stereo-linked, 120 Hz SC HPF, soft knee, capped GR, makeup + mix.
+  class VoxComp{
+    constructor(sr,p){this.thr=Number(p.thr);this.ratio=Math.max(1,Number(p.ratio)||3);this.maxGr=Math.max(0.1,Number(p.maxGr)||8);
+      this.mix=Math.max(0,Math.min(1,(p.mix==null?100:p.mix)/100));this.makeup=Math.pow(10,Math.max(-6,Math.min(12,Number(p.makeup)||0))/20);
+      const att=Math.max(0.2,Number(p.attack)||8),rel=Math.max(20,Number(p.release)||80);
+      this.sc=new Biquad(coefs("highpass",120,sr,0.7071));this.ce=tc(5,sr);this.e=0;
+      this.sm=new GrSmoother(sr,att,rel,3);this.stat=new Stat();this.gr=0}
+    frame(x){const s=this.sc.run((x[0]+x[1])*0.5),p=s*s;this.e=p+(this.e-p)*this.ce;
+      let t=0;const act=this.e>ACT;
+      if(act)t=kneeGr((dB(this.e)+3.01)-this.thr,this.ratio,6);
+      let gr=this.sm.run(t);gr=this.maxGr*Math.tanh(gr/this.maxGr);this.gr=gr;if(act)this.stat.add(gr);
+      const cg=gr>1e-6?Math.pow(10,-gr/20):1,g=(1-this.mix+this.mix*cg)*this.makeup;x[0]*=g;x[1]*=g}
+  }
+  class VoxDSP{
+    constructor(sr,v){this.st=[];this.x=[0,0];
+      const add=(k,o)=>{this.st.push(o);this[k]=o};
+      if(v.gate&&v.gate.on)add("gate",new Gate(sr,v.gate));
+      if(v.eq&&v.eq.on)add("eq",new VocalEQ(sr,v.eq));
+      if(v.dess&&v.dess.on)add("dess",new Dess(sr,v.dess));
+      if(v.comp&&v.comp.on)add("comp",new VoxComp(sr,v.comp));
+    }
+    get active(){return this.st.length>0}
+    process(inp,out,n,off){off=off||0;const st=this.st,ns=st.length,x=this.x,L=inp[0],R=inp[1]||inp[0],oL=out[0],oR=out[1];
+      for(let i=0;i<n;i++){x[0]=L[off+i];x[1]=R[off+i];for(let j=0;j<ns;j++)st[j].frame(x);oL[off+i]=x[0];if(oR)oR[off+i]=x[1]}}
+    stats(){const o={};["gate","dess","comp"].forEach(k=>{if(this[k])o[k]=this[k].stat.get()});return o}
+  }
+  return{VoxDSP,VEQ_BANDS}
+}
+const MMV=MM_VOX_SOURCE(MMS);
+const VOX_PRESETS={
+  Off:{label:"Off",blurb:"Bypassed",hint:"VoxBox is off. The vocal chain is completely bypassed — the master is identical to the rest of the app."},
+  Rap:{label:"Rap Lead",blurb:"Tight · present",hint:"Tight high-pass, present mid, firm compression, strong de-ess, light warmth, short plate and a slap. Built for a rap lead in a dense mix.",
+    eq:{on:true,hpf:100,body:-1,nasal:-1.5,presence:2.5,air:1},dess:{on:true,freq:7500,thr:-15,max:7},comp:{on:true,thr:-16,ratio:4,attack:5,release:60,maxGr:8,mix:100,makeup:2},
+    gate:{on:true,thr:-38,range:14,attack:2,release:70,ratio:2.5},warm:{on:true,drive:15,tone:-15,mix:25},double:{on:true,mix:15,width:70,time:16},
+    verb:{on:true,mode:"plate",mix:8,size:28,decay:22,tone:62,pre:12},delay:{on:true,mode:"slap",mix:12,time:18,feedback:10,tone:50,age:15}},
+  RnB:{label:"Clean R&B",blurb:"Smooth · silky",hint:"Softer EQ, gentle glue, silk de-ess, warm plate and a little vintage delay. Smooth R&B / sung hooks.",
+    eq:{on:true,hpf:80,body:1,nasal:-1,presence:1.5,air:2.5},dess:{on:true,freq:6500,thr:-17,max:5},comp:{on:true,thr:-20,ratio:2.5,attack:12,release:120,maxGr:6,mix:100,makeup:1.5},
+    gate:{on:true,thr:-44,range:8,attack:3,release:100,ratio:2},warm:{on:true,drive:25,tone:-30,mix:35},double:{on:true,mix:20,width:80,time:20},
+    verb:{on:true,mode:"plate",mix:16,size:48,decay:40,tone:55,pre:18},delay:{on:true,mode:"vintage",mix:8,time:32,feedback:22,tone:40,age:25}},
+  Pop:{label:"Autotuned Pop",blurb:"Bright · stacked · no pitch FX",hint:"Bright, tight pop vocal with a wider double and a short ping-pong. No pitch correction and no robot sound — polish only, so it stays clean.",
+    eq:{on:true,hpf:90,body:0,nasal:-2,presence:3,air:3},dess:{on:true,freq:8000,thr:-14,max:8},comp:{on:true,thr:-18,ratio:4,attack:6,release:70,maxGr:8,mix:100,makeup:2},
+    gate:{on:true,thr:-40,range:10,attack:2,release:80,ratio:2},warm:{on:true,drive:18,tone:-5,mix:20},double:{on:true,mix:30,width:90,time:18},
+    verb:{on:true,mode:"plate",mix:10,size:32,decay:28,tone:68,pre:14},delay:{on:true,mode:"pingpong",mix:14,time:28,feedback:20,tone:55,age:10}},
+  LoFi:{label:"Lo-Fi",blurb:"Dark · dusty · warm",hint:"Darker top, more warmth, a small room and a worn vintage echo. No shimmer, just colour.",
+    eq:{on:true,hpf:160,body:1.5,nasal:0,presence:-1,air:-4},dess:{on:true,freq:6000,thr:-18,max:4},comp:{on:true,thr:-18,ratio:3,attack:10,release:90,maxGr:6,mix:100,makeup:1},
+    gate:{on:false,thr:-40,range:10,attack:3,release:90,ratio:2},warm:{on:true,drive:55,tone:-50,mix:70},double:{on:false,mix:10,width:50,time:22},
+    verb:{on:true,mode:"room",mix:8,size:22,decay:16,tone:35,pre:8},delay:{on:true,mode:"vintage",mix:15,time:38,feedback:30,tone:28,age:55}},
+  Radio:{label:"Radio Ready",blurb:"Forward · mid focus",hint:"Presence-forward EQ, firm compression, short room and a slap — built to cut on small speakers.",
+    eq:{on:true,hpf:100,body:-0.5,nasal:-1,presence:3.5,air:1.5},dess:{on:true,freq:6500,thr:-15,max:6},comp:{on:true,thr:-16,ratio:3.5,attack:8,release:80,maxGr:7,mix:100,makeup:2},
+    gate:{on:true,thr:-42,range:10,attack:2,release:75,ratio:2},warm:{on:true,drive:20,tone:-15,mix:25},double:{on:true,mix:18,width:75,time:16},
+    verb:{on:true,mode:"room",mix:8,size:24,decay:18,tone:58,pre:8},delay:{on:true,mode:"slap",mix:8,time:16,feedback:8,tone:52,age:12}},
+  Podcast:{label:"Podcast / Voice",blurb:"Clear · spoken",hint:"Speech-friendly high-pass, a nasal dip, gentle compression, a useful expander and almost no space — for voice-over, podcasts and talking hooks.",
+    eq:{on:true,hpf:90,body:0.5,nasal:-2,presence:1.5,air:0.5},dess:{on:true,freq:6500,thr:-16,max:6},comp:{on:true,thr:-20,ratio:3,attack:10,release:100,maxGr:6,mix:100,makeup:2},
+    gate:{on:true,thr:-36,range:18,attack:3,release:90,ratio:3},warm:{on:true,drive:12,tone:-20,mix:15},double:{on:false,mix:0,width:50,time:16},
+    verb:{on:true,mode:"room",mix:4,size:18,decay:12,tone:48,pre:6},delay:{on:false,mode:"slap",mix:0,time:16,feedback:8,tone:50,age:10}}
+};
+const VOX_SPACE_PRESETS={
+  TightPlate:{label:"Tight Plate",blurb:"Short · bright",verb:{on:true,mode:"plate",mix:15,size:26,decay:24,tone:66,pre:10},delay:{on:false,mode:"slap",mix:0,time:16,feedback:8,tone:50,age:10},hint:"Dense, short plate — classic vocal throw."},
+  LushHall:{label:"Lush Hall",blurb:"Big · smooth",verb:{on:true,mode:"hall",mix:22,size:70,decay:62,tone:50,pre:32},delay:{on:false,mode:"vintage",mix:0,time:40,feedback:25,tone:40,age:20},hint:"Longer hall with a smooth, unpitched tail. No shimmer."},
+  IntimateRoom:{label:"Intimate Room",blurb:"Close · short",verb:{on:true,mode:"room",mix:12,size:20,decay:16,tone:46,pre:8},delay:{on:false,mode:"slap",mix:0,time:14,feedback:6,tone:50,age:8},hint:"Small room: early reflections, a short tail, stays close."},
+  VintageEcho:{label:"Vintage Echo",blurb:"Tape-style delay",verb:{on:false,mode:"room",mix:0,size:20,decay:14,tone:40,pre:8},delay:{on:true,mode:"vintage",mix:18,time:40,feedback:35,tone:35,age:50},hint:"Worn, damped echo with gentle wow — no pitch-shifted repeats."},
+  Slapback:{label:"Slapback",blurb:"Short throw",verb:{on:false,mode:"plate",mix:0,size:20,decay:14,tone:50,pre:8},delay:{on:true,mode:"slap",mix:16,time:16,feedback:8,tone:50,age:18},hint:"Classic 80–130 ms slap, almost no feedback."},
+  DreamDelay:{label:"Dream Delay",blurb:"Long · dark · no shimmer",verb:{on:true,mode:"hall",mix:10,size:55,decay:48,tone:42,pre:24},delay:{on:true,mode:"vintage",mix:20,time:58,feedback:42,tone:30,age:40},hint:"Long dark delay plus a soft hall. Time-domain only — no octave shimmer."}
+};
+const vox={on:false,preset:"Off",spacePreset:null,
+  eq:{on:false,hpf:80,body:0,nasal:0,presence:0,air:0},
+  dess:{on:false,freq:7000,thr:-16,max:6},
+  comp:{on:false,thr:-18,ratio:3,attack:8,release:80,maxGr:8,mix:100,makeup:0},
+  gate:{on:false,thr:-40,range:12,attack:2,release:80,ratio:2},
+  warm:{on:false,drive:20,tone:-20,mix:40},
+  double:{on:false,mix:25,width:80,time:18},
+  verb:{on:false,mode:"plate",mix:12,size:40,decay:35,tone:55,pre:20},
+  delay:{on:false,mode:"vintage",mix:10,time:35,feedback:25,tone:45,age:30}
+};
+function voxSnapshot(){return JSON.parse(JSON.stringify(vox))}
+function voxDspActive(v){v=v||vox;return!!(v.eq.on||v.dess.on||v.comp.on||v.gate.on)}
+function voxFxActive(v){v=v||vox;return!!(v.warm.on||v.double.on||v.verb.on||v.delay.on)}
+function voxActive(v){v=v||vox;return!!(v.on&&(voxDspActive(v)||voxFxActive(v)))}
+function voxLabel(){if(!voxActive())return"";const p=VOX_PRESETS[vox.preset];return" + VoxBox"+(p&&vox.preset!=="Off"?" "+p.label:"")}
+function voxAssign(dst,src){Object.keys(src).forEach(k=>{if(src[k]&&typeof src[k]==="object"&&!Array.isArray(src[k]))Object.assign(dst[k],src[k]);else if(k!=="label"&&k!=="blurb"&&k!=="hint")dst[k]=src[k]})}
+function applyVoxPreset(key){
+  const p=VOX_PRESETS[key];if(!p)return;
+  vox.preset=key;vox.spacePreset=null;
+  if(key==="Off"){vox.on=false;return}
+  vox.on=true;voxAssign(vox,p);
+}
+function applyVoxSpacePreset(key){
+  const p=VOX_SPACE_PRESETS[key];if(!p)return;
+  vox.on=true;vox.spacePreset=key;vox.preset="Custom";
+  Object.assign(vox.verb,p.verb);Object.assign(vox.delay,p.delay);
+}
+// ---- Doubler (Haas, high-passed, tiny time wobble — no pitch shift) ----
+function buildVoxDoubleGraph(ctx,input,s,liveOut){
+  const mix=tClamp(s.mix,0,100)/100,width=tClamp(s.width,0,100)/100,time=tClamp(s.time,8,30);
+  const G=v=>{const g=ctx.createGain();g.gain.value=v;return g};
+  const out=G(1);out.channelCount=2;out.channelCountMode="explicit";
+  const dry=G(1-mix);input.connect(dry);dry.connect(out);
+  if(mix<=0.001)return out;
+  const inSt=G(1);inSt.channelCount=2;inSt.channelCountMode="explicit";inSt.channelInterpretation="speakers";input.connect(inSt);
+  const hp=ctx.createBiquadFilter();hp.type="highpass";hp.frequency.value=200;hp.Q.value=BW_Q_DB;inSt.connect(hp);
+  const split=ctx.createChannelSplitter(2);hp.connect(split);
+  const tL=time*0.001,tR=(time+8)*0.001,dL=ctx.createDelay(0.08),dR=ctx.createDelay(0.08);dL.delayTime.value=tL;dR.delayTime.value=tR;
+  split.connect(dL,0);split.connect(dR,1);
+  const depth=0.00035,lfoL=ctx.createOscillator();lfoL.type="sine";lfoL.frequency.value=0.23;const gL=G(depth);lfoL.connect(gL);gL.connect(dL.delayTime);lfoL.start();
+  const lfoR=ctx.createOscillator();lfoR.type="sine";lfoR.frequency.value=0.29;const gR=G(depth);lfoR.connect(gR);gR.connect(dR.delayTime);lfoR.start(ctx.currentTime+0.4);
+  if(liveOut){(liveOut.osc=liveOut.osc||[]).push(lfoL,lfoR)}
+  const merge=ctx.createChannelMerger(2);
+  const wL=G(mix*(0.5+0.5*width)),wR=G(mix*(0.5+0.5*width)),cL=G(mix*(1-width)*0.5),cR=G(mix*(1-width)*0.5);
+  dL.connect(wL);dR.connect(wR);dL.connect(cR);dR.connect(cL);
+  wL.connect(merge,0,0);cL.connect(merge,0,0);wR.connect(merge,0,1);cR.connect(merge,0,1);
+  merge.connect(out);return out
+}
+// ---- Valhalla-style reverb: dense FDN plate / hall / room, shimmer-free ----
+function voxVerbParams(s){
+  const mode=s.mode==="hall"||s.mode==="room"?s.mode:"plate";
+  const size=tClamp(s.size,0,100)/100,decay=tClamp(s.decay,0,100)/100,tone=tClamp(s.tone,0,100)/100,pre=tClamp(s.pre,0,100)/100,mix=tClamp(s.mix,0,100)/100;
+  const rt=mode==="hall"?0.5+decay*3.5:mode==="room"?0.18+decay*0.7:0.3+decay*1.6;
+  const T=mode==="hall"?0.03+size*0.10:mode==="room"?0.012+size*0.03:0.018+size*0.055;
+  const lp=600*Math.pow(22,tone),hp=mode==="hall"?80:mode==="room"?120:100;
+  const pred=0.004+pre*(mode==="hall"?0.06:0.03);
+  const ratios=mode==="room"?[0.19,0.23,0.29,0.31,0.37,0.41]:mode==="hall"?[0.61,0.73,0.83,0.97,1.09,1.19,1.31,1.47]:[0.37,0.41,0.43,0.47,0.53,0.59,0.67,0.73];
+  const early=mode==="room"?0.7:mode==="hall"?0.35:0.45;
+  const mod=mode==="room"?0.002:0.004;
+  return{mode,mix,rt,T,lp,hp,pred,ratios,early,mod}
+}
+function voxVerbTail(s){if(!s||!s.on)return 0;const P=voxVerbParams(s);return P.pred+P.rt+0.4}
+function buildVoxVerbGraph(ctx,input,s,liveOut){
+  const P=voxVerbParams(s);const G=v=>{const g=ctx.createGain();g.gain.value=v;return g};
+  const BQ=(t,f,q)=>{const b=ctx.createBiquadFilter();b.type=t;b.frequency.value=f;b.Q.value=q;return b};
+  const DL=(t,max)=>{const d=ctx.createDelay(max);d.delayTime.value=t;return d};
+  const LFO=(rate,depth,target,phase)=>{const o=ctx.createOscillator();o.type="sine";o.frequency.value=rate;const g=G(depth);o.connect(g);g.connect(target);o.start(phase?ctx.currentTime+phase/rate:0);if(liveOut){(liveOut.osc=liveOut.osc||[]).push(o)}return o};
+  const SAFE=()=>{const pre=G(0.25),ws=ctx.createWaveShaper();ws.curve=fxSafeCurve();pre.connect(ws);return{i:pre,o:ws}};
+  const out=G(1);out.channelCount=2;out.channelCountMode="explicit";
+  const dry=G(Math.cos(P.mix*Math.PI/2));input.connect(dry);dry.connect(out);
+  if(P.mix<=0.001)return out;
+  const inSt=G(1);inSt.channelCount=2;inSt.channelCountMode="explicit";inSt.channelInterpretation="speakers";input.connect(inSt);
+  const preD=DL(P.pred,0.12);inSt.connect(preD);
+  const split=ctx.createChannelSplitter(2);preD.connect(split);
+  const merge=ctx.createChannelMerger(2);
+  // Early reflections (shimmer-free, fixed taps).
+  const taps=P.mode==="hall"?[[0.019,0.28,0],[0.027,0.22,1],[0.041,0.18,0],[0.053,0.14,1],[0.071,0.1,0]]:P.mode==="room"?[[0.007,0.42,0],[0.011,0.36,1],[0.017,0.28,0],[0.023,0.2,1]]:[[0.009,0.34,0],[0.013,0.28,1],[0.021,0.22,0],[0.029,0.16,1]];
+  taps.forEach(([t,g,c])=>{const d=DL(t,0.12),gn=G(g*P.early);split.connect(d,c);d.connect(gn);gn.connect(merge,0,c)});
+  // Dense FDN tail (6-line room, 8-line plate/hall, Householder mix). Jot decay, loop damping, slow delay-time chorus — not pitch shift.
+  const n=P.ratios.length,hScale=2/n; // Householder I-2/n works for 4, 6 or 8 lines
+  const lines=P.ratios.map((r,i)=>{
+    const sum=G(1),d=DL(P.T*r,2.2),lp=BQ("lowpass",P.lp,BW_Q_DB),hp=BQ("highpass",P.hp,BW_Q_DB),sclip=SAFE();
+    const gi=G(Math.pow(10,-3*P.T*r/P.rt));
+    sum.connect(d);d.connect(lp);lp.connect(hp);hp.connect(gi);gi.connect(sclip.i);
+    LFO(0.11+0.05*i,Math.min(P.T*r*0.4,P.mod),d.delayTime,i*0.37);
+    split.connect(sum,i%2);
+    return{sum,o:sclip.o}
+  });
+  lines.forEach((li,i)=>lines.forEach((lj,j)=>{const m=G((i===j?1:0)-hScale);li.o.connect(m);m.connect(lj.sum)}));
+  lines.forEach((li,i)=>{const o=G((i%2?1:-1)*0.55*(1-P.early*0.35));li.o.connect(o);o.connect(merge,0,i%2)});
+  const gAvg=Math.pow(10,-3*P.T*1.4/P.rt);
+  const wet=G(Math.sin(P.mix*Math.PI/2)*Math.sqrt(Math.max(0.08,1-gAvg*gAvg))*1.15);
+  merge.connect(wet);wet.connect(out);return out
+}
+// ---- Vintage / ping-pong / slap delay (damped, optional wow, always decays) ----
+function voxDelayParams(s){
+  const mode=s.mode==="pingpong"||s.mode==="slap"?s.mode:"vintage";
+  const mix=tClamp(s.mix,0,100)/100,time=tClamp(s.time,0,100)/100,fb=tClamp(s.feedback,0,100)/100,tone=tClamp(s.tone,0,100)/100,age=tClamp(s.age,0,100)/100;
+  const t=mode==="slap"?0.06+time*0.08:0.09+time*0.46;
+  const lp=(mode==="vintage"?500:700)*Math.pow(18,tone)*(1-age*0.35);
+  const wow=mode==="slap"?age*0.0008:age*0.0035;
+  const maxRt=mode==="slap"?1.2:6;
+  const g=Math.min(0.88,Math.min(0.85*fb+(mode==="vintage"?age*0.05:0),Math.pow(10,-3*t/maxRt)));
+  return{mode,mix,t,lp,wow,g,age,maxRt}
+}
+function voxDelayTail(s){if(!s||!s.on)return 0;const P=voxDelayParams(s);if(P.g<0.01)return P.t+0.2;return Math.min(P.maxRt,P.t*60/Math.max(1,-20*Math.log10(P.g)))+0.3}
+function buildVoxDelayGraph(ctx,input,s,liveOut){
+  const P=voxDelayParams(s);const G=v=>{const g=ctx.createGain();g.gain.value=v;return g};
+  const BQ=(t,f,q)=>{const b=ctx.createBiquadFilter();b.type=t;b.frequency.value=f;b.Q.value=q;return b};
+  const DL=(t,max)=>{const d=ctx.createDelay(max);d.delayTime.value=t;return d};
+  const LFO=(rate,depth,target,phase)=>{const o=ctx.createOscillator();o.type="sine";o.frequency.value=rate;const g=G(depth);o.connect(g);g.connect(target);o.start(phase?ctx.currentTime+phase/rate:0);if(liveOut){(liveOut.osc=liveOut.osc||[]).push(o)}return o};
+  const SAFE=()=>{const pre=G(0.25),ws=ctx.createWaveShaper();ws.curve=fxSafeCurve();pre.connect(ws);return{i:pre,o:ws}};
+  const out=G(1);out.channelCount=2;out.channelCountMode="explicit";
+  const dry=G(Math.cos(P.mix*Math.PI/2));input.connect(dry);dry.connect(out);
+  if(P.mix<=0.001)return out;
+  const inSt=G(1);inSt.channelCount=2;inSt.channelCountMode="explicit";inSt.channelInterpretation="speakers";input.connect(inSt);
+  const split=ctx.createChannelSplitter(2);inSt.connect(split);
+  const merge=ctx.createChannelMerger(2);
+  const hp=BQ("highpass",120,BW_Q_DB);
+  if(P.mode==="pingpong"){
+    const mono=G(0.5);split.connect(mono,0);split.connect(mono,1);mono.connect(hp);
+    const dL=DL(P.t,1.5),dR=DL(P.t,1.5),lpL=BQ("lowpass",P.lp,BW_Q_DB),lpR=BQ("lowpass",P.lp,BW_Q_DB),fL=G(P.g),fR=G(P.g),sL=SAFE(),sR=SAFE();
+    hp.connect(dL);dL.connect(lpL);lpL.connect(sL.i);sL.o.connect(fL);fL.connect(dR);dR.connect(lpR);lpR.connect(sR.i);sR.o.connect(fR);fR.connect(dL);
+    dL.connect(merge,0,0);dR.connect(merge,0,1);
+    if(P.wow>0){LFO(0.55,P.wow,dL.delayTime);LFO(0.47,P.wow,dR.delayTime,0.25)}
+  }else{
+    // Vintage (mono tape-style, slight stereo spread) or slap (same, shorter).
+    const mono=G(0.5);split.connect(mono,0);split.connect(mono,1);mono.connect(hp);
+    const d=DL(P.t,1.5),lp=BQ("lowpass",P.lp,BW_Q_DB),fb=G(P.g),sc=SAFE();
+    hp.connect(d);d.connect(lp);lp.connect(sc.i);sc.o.connect(fb);fb.connect(d);
+    const oL=G(1),oR=G(1);d.connect(oL);
+    // Tiny opposite delay on one side so it isn't dead-center, still mono-compatible.
+    const spr=DL(P.mode==="slap"?0.004:0.007,0.03);d.connect(spr);spr.connect(oR);
+    oL.connect(merge,0,0);oR.connect(merge,0,1);
+    if(P.wow>0)LFO(0.7+P.age*0.8,P.wow,d.delayTime);
+  }
+  const wet=G(Math.sin(P.mix*Math.PI/2));merge.connect(wet);wet.connect(out);return out
+}
+function voxTailSeconds(v){v=v||vox;return Math.max(v.verb.on?voxVerbTail(v.verb):0,v.delay.on?voxDelayTail(v.delay):0,v.double.on?0.08:0)}
+function mmMakeVoxNode(ctx,useWorklet,v){
+  const opts={numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],channelCount:2,channelCountMode:"explicit",channelInterpretation:"speakers"};
+  if(useWorklet)return new AudioWorkletNode(ctx,"mm-vox",Object.assign({processorOptions:{v}},opts));
+  const d=new MMV.VoxDSP(ctx.sampleRate,v),sp=ctx.createScriptProcessor(2048,2,2);
+  sp.onaudioprocess=e=>{const ib=e.inputBuffer,ob=e.outputBuffer;d.process([ib.getChannelData(0),ib.getChannelData(1)],[ob.getChannelData(0),ob.getChannelData(1)],ib.length,0)};return sp
+}
+function buildVoxGraph(ctx,input,v,liveOut,useWorklet){
+  let node=input;const head=[];
+  if(voxDspActive(v)){const vn=mmMakeVoxNode(ctx,!!useWorklet,v);node.connect(vn);node=vn;head.push(vn);if(liveOut)liveOut.vox=vn}
+  if(v.warm.on)node=buildSatGraph(ctx,node,v.warm);
+  if(v.double.on)node=buildVoxDoubleGraph(ctx,node,v.double,liveOut);
+  if(v.verb.on)node=buildVoxVerbGraph(ctx,node,v.verb,liveOut);
+  if(v.delay.on)node=buildVoxDelayGraph(ctx,node,v.delay,liveOut);
+  if(liveOut)liveOut.voxHead=head;
+  return node
+}
+async function renderVoxDsp(buffer,v){
+  const sr=buffer.sampleRate,N=buffer.length,L=buffer.getChannelData(0),R=buffer.numberOfChannels>1?buffer.getChannelData(1):L;
+  const out=new AudioBuffer({length:N,numberOfChannels:2,sampleRate:sr}),oL=out.getChannelData(0),oR=out.getChannelData(1);
+  const d=new MMV.VoxDSP(sr,v),B=1<<18,yieldUI=()=>new Promise(r=>setTimeout(r,0));
+  for(let o=0;o<N;o+=B){d.process([L,R],[oL,oR],Math.min(B,N-o),o);await yieldUI()}
+  for(let i=0;i<N;i+=101)if(!isFinite(oL[i])||!isFinite(oR[i]))throw new Error("VoxBox produced invalid samples");
+  return{buffer:out,stats:d.stats()}
+}
+async function renderVoxFx(buffer,v){
+  const sr=buffer.sampleRate,tail=Math.round(voxTailSeconds(v)*sr),len=buffer.length+tail;
+  const off=new OfflineAudioContext(2,len,sr);const src=off.createBufferSource();src.buffer=buffer;
+  let node=src;
+  if(v.warm.on)node=buildSatGraph(off,node,v.warm);
+  if(v.double.on)node=buildVoxDoubleGraph(off,node,v.double);
+  if(v.verb.on)node=buildVoxVerbGraph(off,node,v.verb);
+  if(v.delay.on)node=buildVoxDelayGraph(off,node,v.delay);
+  node.connect(off.destination);src.start(0);
+  const r=await off.startRendering();
+  let bad=false;for(let c=0;c<2&&!bad;c++){const d=r.getChannelData(c);for(let i=0;i<d.length;i+=97)if(!isFinite(d[i])){bad=true;break}}
+  if(bad)throw new Error("VoxBox space produced invalid samples");
+  return r
+}
+async function renderVox(buffer,v){
+  let buf=buffer,st=null;
+  if(voxDspActive(v)){const r=await renderVoxDsp(buf,v);buf=r.buffer;st=r.stats;if(typeof showVoxStats==="function")showVoxStats(st)}
+  if(voxFxActive(v))buf=await renderVoxFx(buf,v);
+  return buf
+}
+</script>
+
+<script>
 /* ---- Tools / Chain UI + unified realtime preview engine ---- */
 const $=id=>document.getElementById(id);
 function bindToolToggle(btnId,obj,onChange){const b=$(btnId);const sync=()=>{b.classList.toggle("on",obj.on);b.textContent=obj.on?"On":"Off"};b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();obj.on=!obj.on;sync();onChange&&onChange()});sync();return sync}
@@ -1108,7 +1454,7 @@ $("meterReset").onclick=()=>{mHist.m=[];mHist.s=[];mHist.src="live";if(pv.tail)p
 const chainPreviewBtn=$("chainPreviewBtn");
 const pv={ctx:null,src:null,head:[],startAt:0,offset:0,timer:null,tail:null,tailPromise:null,live:{},peakScale:1,peakFor:null};
 function previewRunning(){return!!pv.src}
-function setPreviewLabels(on){immPreviewBtn.textContent=on?"Stop preview":"Live preview";chainPreviewBtn.textContent=on?"Stop preview":"Preview chain"}
+function setPreviewLabels(on){immPreviewBtn.textContent=on?"Stop preview":"Live preview";chainPreviewBtn.textContent=on?"Stop preview":"Preview chain";const vb=document.getElementById("voxPreviewBtn");if(vb)vb.textContent=on?"Stop preview":"Preview chain"}
 function currentMasterOpts(){const cfg=PRESETS[style];let high=cfg.eq_gain_high,low=cfg.eq_gain_low;if(depthOn)low+=1;if(presenceOn)high+=0.9;return{highDb:high,lowDb:low,threshold:cfg.comp_threshold,ratio:cfg.comp_ratio,makeupDb:cfg.limiter_boost,ceilingDb:-1}}
 async function ensureTail(){
   if(pv.tail)return pv.tail;if(pv.tailPromise)return pv.tailPromise;
@@ -1134,12 +1480,13 @@ async function startImmersivePreview(){
   if(pv.peakFor!==audioBuffer){let pk=0;for(let c=0;c<audioBuffer.numberOfChannels;c++){const d=audioBuffer.getChannelData(c);for(let i=0;i<d.length;i+=3){const a=Math.abs(d[i]);if(a>pk)pk=a}}pv.peakScale=pk>1e-6?Math.min(1,0.89/pk):1;pv.peakFor=audioBuffer}
   const ctx=pv.ctx,src=ctx.createBufferSource();src.buffer=audioBuffer;
   const norm=ctx.createGain();norm.gain.value=pv.peakScale;src.connect(norm);
-  let node=buildToolsGraph(ctx,norm,tools,pv.live);
+  let node=norm;if(typeof voxActive==="function"&&voxActive())node=buildVoxGraph(ctx,node,voxSnapshot(),pv.live,tail.mode==="AudioWorklet");
+  node=buildToolsGraph(ctx,node,tools,pv.live);
   if(immersive.enabled)node=buildImmersiveGraph(ctx,node,immersive);
   if(presetStage.on)node=buildMasterApprox(ctx,node,currentMasterOpts());
   let sn=null;if(studioActive()){sn=mmMakeStudioNode(ctx,tail.mode==="AudioWorklet",studioSnapshot());node.connect(sn);node=sn}
   const st=ctx.createGain();st.channelCount=2;st.channelCountMode="explicit";st.channelInterpretation="speakers";node.connect(st);st.connect(tail.am);
-  pv.head=[src,norm,st];if(sn)pv.head.push(sn);
+  pv.head=[src,norm,st];if(sn)pv.head.push(sn);if(pv.live.voxHead)pv.head.push.apply(pv.head,pv.live.voxHead);
   src.onended=()=>{if(pv.src===src){pv.src=null;pv.offset=0;setPreviewLabels(false)}};
   pv.startAt=ctx.currentTime;src.start(0,pv.offset);pv.src=src;mHist.src="live";setPreviewLabels(true)
 }
@@ -1386,6 +1733,67 @@ $("smartBtn").onclick=()=>smartRun(false);$("smartAnalyzeBtn").onclick=()=>smart
 if(audioBuffer)setSmartEnabled(true);
 drawCeq();
 </script>
+<script>
+/* ---- VoxBox UI (presets, cards, live-preview hooks) ---- */
+function showVoxStats(st){const f=o=>o?"avg −"+o.avg.toFixed(1)+" dB · max −"+o.max.toFixed(1)+" dB":"–";
+  const d=$("voxDessStat"),c=$("voxCompStat"),g=$("voxGateStat");
+  if(d)d.textContent=st&&st.dess?"Last export · "+f(st.dess):"";
+  if(c)c.textContent=st&&st.comp?"Last export · "+f(st.comp):"";
+  if(g)g.textContent=st&&st.gate?"Last export · "+f(st.gate):""}
+function voxMarkCustom(spaceToo){if(vox.preset!=="Custom"&&vox.preset!=="Off")vox.preset="Custom";if(spaceToo)vox.spacePreset=null;syncVoxPresets();syncVoxSpacePresets()}
+function voxOnChange(){if(voxDspActive()||voxFxActive())vox.on=true;voxMarkCustom(false);syncVoxMaster();drawVoxEq();restartPreviewSoon()}
+function voxSpaceChange(){if(vox.verb.on||vox.delay.on)vox.on=true;voxMarkCustom(true);syncVoxMaster();syncVoxSpaceToggle();restartPreviewSoon()}
+const voxSyncs=[];
+function syncVoxMaster(){const b=$("voxToggle");if(!b)return;b.classList.toggle("on",vox.on);b.textContent="VoxBox: "+(vox.on?"ON":"OFF")}
+function syncVoxPresets(){document.querySelectorAll("#voxPresetGrid .preset").forEach(b=>b.classList.toggle("active",b.dataset.key===vox.preset));
+  const p=VOX_PRESETS[vox.preset];$("voxHint").textContent=p?p.hint:(vox.preset==="Custom"?"Custom vocal chain. Tweak any card, or tap a preset to start over.":VOX_PRESETS.Off.hint)}
+function syncVoxSpacePresets(){document.querySelectorAll("#voxSpaceGrid .preset").forEach(b=>b.classList.toggle("active",b.dataset.key===vox.spacePreset))}
+function syncVoxSpaceToggle(){const on=vox.verb.on||vox.delay.on,b=$("voxSpaceToggle");b.classList.toggle("on",on);b.textContent=on?"On":"Off"}
+(function buildVoxUI(){
+  const grid=$("voxPresetGrid");
+  Object.keys(VOX_PRESETS).forEach(key=>{const p=VOX_PRESETS[key],btn=document.createElement("button");btn.type="button";btn.className="preset";btn.dataset.key=key;btn.innerHTML=p.label+"<small>"+p.blurb+"</small>";
+    btn.onclick=()=>{applyVoxPreset(key);voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();syncVoxSpacePresets();drawVoxEq();restartPreviewSoon()};grid.appendChild(btn)});
+  const sg=$("voxSpaceGrid");
+  Object.keys(VOX_SPACE_PRESETS).forEach(key=>{const p=VOX_SPACE_PRESETS[key],btn=document.createElement("button");btn.type="button";btn.className="preset fx-mode";btn.dataset.key=key;btn.innerHTML=p.label+"<small>"+p.blurb+"</small>";
+    btn.onclick=()=>{applyVoxSpacePreset(key);voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();syncVoxSpacePresets();$("voxSpaceHint").textContent=p.hint;restartPreviewSoon()};sg.appendChild(btn)});
+  $("voxToggle").onclick=()=>{vox.on=!vox.on;if(vox.on&&!voxDspActive()&&!voxFxActive()){applyVoxPreset("Rap");voxSyncs.forEach(f=>f());drawVoxEq()}syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();restartPreviewSoon()};
+  $("voxSpaceToggle").onclick=e=>{e.preventDefault();e.stopPropagation();const on=vox.verb.on||vox.delay.on;if(on){vox.verb.on=false;vox.delay.on=false;vox.spacePreset=null}else{applyVoxSpacePreset(vox.spacePreset&&VOX_SPACE_PRESETS[vox.spacePreset]?vox.spacePreset:"TightPlate")}
+    voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();syncVoxSpacePresets();restartPreviewSoon()};
+  $("voxPreviewBtn").onclick=togglePreview;
+  [["voxEqToggle","eq",voxOnChange],["voxDessToggle","dess",voxOnChange],["voxCompToggle","comp",voxOnChange],["voxGateToggle","gate",voxOnChange],["voxWarmToggle","warm",voxOnChange],["voxDoubleToggle","double",voxOnChange]].forEach(([id,k,fn])=>voxSyncs.push(bindToolToggle(id,vox[k],fn)));
+  addRows("voxEqRows",[["voxEqHpf","High-pass",40,200,1],["voxEqBody","Body 220 Hz",-8,8,0.1],["voxEqNasal","Nasal 900 Hz",-8,8,0.1],["voxEqPres","Presence 4 kHz",-8,8,0.1],["voxEqAir","Air 11 kHz",-8,8,0.1]]);
+  [["voxEqHpf","hpf",fHz],["voxEqBody","body",fdB],["voxEqNasal","nasal",fdB],["voxEqPres","presence",fdB],["voxEqAir","air",fdB]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.eq,k,f,()=>{voxOnChange()})));
+  $("voxEqFlat").onclick=()=>{vox.eq.hpf=80;vox.eq.body=0;vox.eq.nasal=0;vox.eq.presence=0;vox.eq.air=0;voxSyncs.forEach(f=>f());voxOnChange()};
+  addRows("voxDessRows",[["voxDessFreq","Frequency",4000,10000,100],["voxDessThr","Threshold",-30,0,0.5],["voxDessMax","Max cut",0,10,0.5]]);
+  [["voxDessFreq","freq",fHz],["voxDessThr","thr",fRel],["voxDessMax","max",fCut]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.dess,k,f,voxOnChange)));
+  addRows("voxCompRows",[["voxCompThr","Threshold",-40,0,0.5],["voxCompRatio","Ratio",1.5,6,0.1],["voxCompAtt","Attack",0.5,40,0.5],["voxCompRel","Release",20,300,5],["voxCompMax","Max GR",1,12,0.5],["voxCompMakeup","Makeup",-6,12,0.1],["voxCompMix","Mix",0,100,1]]);
+  [["voxCompThr","thr",fRel],["voxCompRatio","ratio",v=>Number(v).toFixed(1)+":1"],["voxCompAtt","attack",v=>Number(v).toFixed(1)+" ms"],["voxCompRel","release",v=>Math.round(v)+" ms"],["voxCompMax","maxGr",v=>Number(v).toFixed(1)+" dB"],["voxCompMakeup","makeup",fdB],["voxCompMix","mix",v=>v+"%"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.comp,k,f,voxOnChange)));
+  addRows("voxGateRows",[["voxGateThr","Threshold",-60,-10,0.5],["voxGateRange","Range",0,24,0.5],["voxGateAtt","Attack",0.2,20,0.2],["voxGateRel","Release",20,300,5],["voxGateRatio","Ratio",1.5,4,0.1]]);
+  [["voxGateThr","thr",fRel],["voxGateRange","range",v=>Number(v).toFixed(1)+" dB"],["voxGateAtt","attack",v=>Number(v).toFixed(1)+" ms"],["voxGateRel","release",v=>Math.round(v)+" ms"],["voxGateRatio","ratio",v=>Number(v).toFixed(1)+":1"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.gate,k,f,voxOnChange)));
+  addRows("voxWarmRows",[["voxWarmDrive","Drive",0,100,1],["voxWarmTone","Tone",-100,100,1],["voxWarmMix","Mix",0,100,1]]);
+  [["voxWarmDrive","drive",v=>"+"+(v*0.24).toFixed(1)+" dB"],["voxWarmTone","tone",v=>(v>0?"+":"")+v],["voxWarmMix","mix",v=>v+"%"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.warm,k,f,voxOnChange)));
+  addRows("voxDoubleRows",[["voxDoubleMix","Mix",0,100,1],["voxDoubleWidth","Width",0,100,1],["voxDoubleTime","Time",8,30,0.5]]);
+  [["voxDoubleMix","mix",v=>v+"%"],["voxDoubleWidth","width",v=>v+"%"],["voxDoubleTime","time",v=>Number(v).toFixed(1)+" ms"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.double,k,f,voxOnChange)));
+  addRows("voxVerbRows",[["voxVerbMix","Mix",0,100,1],["voxVerbSize","Size",0,100,1],["voxVerbDecay","Decay",0,100,1],["voxVerbTone","Tone",0,100,1],["voxVerbPre","Predelay",0,100,1]]);
+  [["voxVerbMix","mix",v=>v+"%"],["voxVerbSize","size",v=>v+"%"],["voxVerbDecay","decay",v=>v+"%"],["voxVerbTone","tone",v=>v+"%"],["voxVerbPre","pre",v=>Math.round(4+v*0.6)+" ms"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.verb,k,f,voxSpaceChange)));
+  addRows("voxDelayRows",[["voxDelayMix","Mix",0,100,1],["voxDelayTime","Time",0,100,1],["voxDelayFb","Feedback",0,100,1],["voxDelayTone","Tone",0,100,1],["voxDelayAge","Age",0,100,1]]);
+  [["voxDelayMix","mix",v=>v+"%"],["voxDelayTime","time",v=>v+"%"],["voxDelayFb","feedback",v=>v+"%"],["voxDelayTone","tone",v=>v+"%"],["voxDelayAge","age",v=>v+"%"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.delay,k,f,voxSpaceChange)));
+  bindSelect("voxVerbMode",vox.verb,"mode",false,voxSpaceChange);bindSelect("voxDelayMode",vox.delay,"mode",false,voxSpaceChange);
+  // Space card toggle is not a single vox.space.on object; keep it in sync with verb/delay.
+  voxSyncs.push(syncVoxMaster,syncVoxPresets,syncVoxSpacePresets,syncVoxSpaceToggle);
+})();
+const voxEqCanvas=$("voxEqCanvas"),voxEqG=voxEqCanvas&&voxEqCanvas.getContext?voxEqCanvas.getContext("2d"):null;
+function drawVoxEq(){if(!voxEqG)return;const W=600,H=140,g=voxEqG,sr=48000,X=f=>Math.log(f/20)/Math.log(1000)*W,Y=d=>H/2-d/8*(H/2-10);
+  const hpf=Math.max(40,Math.min(240,vox.eq.hpf||80)),cs=[MMS.coefs("highpass",hpf,sr,0.7071)];
+  MMV.VEQ_BANDS.forEach(b=>{const gn=Number(vox.eq[b.k])||0;if(Math.abs(gn)>=0.05)cs.push(MMS.coefs(b.t,b.f,sr,b.q,gn))});
+  g.clearRect(0,0,W,H);g.fillStyle="rgba(0,0,0,.35)";g.fillRect(0,0,W,H);g.strokeStyle="rgba(255,255,255,.08)";g.fillStyle="rgba(255,255,255,.4)";g.font="10px system-ui";
+  [50,100,200,500,1000,2000,5000,10000].forEach(f=>{g.beginPath();g.moveTo(X(f),0);g.lineTo(X(f),H);g.stroke();g.fillText(f>=1000?f/1000+"k":f,X(f)+2,H-4)});
+  [-4,0,4].forEach(d=>{g.beginPath();g.moveTo(0,Y(d));g.lineTo(W,Y(d));g.stroke();g.fillText((d>0?"+":"")+d,4,Y(d)-2)});
+  g.beginPath();for(let i=0;i<=300;i++){const f=20*Math.pow(1000,i/300);let d=0;cs.forEach(c=>d+=MMS.magDb(c,f,sr));i?g.lineTo(X(f),Y(d)):g.moveTo(X(f),Y(d))}
+  g.strokeStyle=vox.eq.on&&vox.on?"#7dd3fc":"rgba(125,211,252,.4)";g.lineWidth=2.5;g.stroke();g.lineWidth=1}
+syncVoxMaster();syncVoxPresets();syncVoxSpacePresets();syncVoxSpaceToggle();drawVoxEq();
+</script>
+
 <div class="update-bar hidden" id="updateBar" role="status"><span>Update available</span><button type="button" id="updateReload">Reload</button><button type="button" class="x" id="updateDismiss" aria-label="Dismiss">✕</button></div>
 <script>
 /* ---- Installable app: service worker registration + update prompt ---- */

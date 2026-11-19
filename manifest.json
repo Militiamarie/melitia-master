@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Melitia Master",
   "short_name": "Melitia Master",
-  "description": "AI online mastering, immersive audio and mix tools — works offline once installed",
+  "description": "AI online mastering, VoxBox vocal tools, immersive audio and mix tools — works offline once installed",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

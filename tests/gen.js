@@ -21,3 +21,14 @@ T.fft=(re,im)=>{const n=re.length;for(let i=1,j=0;i<n;i++){let b=n>>1;for(;j&b;b
   for(let len=2;len<=n;len<<=1){const a=-2*Math.PI/len,wr=Math.cos(a),wi=Math.sin(a);for(let i=0;i<n;i+=len){let cr=1,ci=0;for(let k=0;k<len/2;k++){const ur=re[i+k],ui=im[i+k],vr=re[i+k+len/2]*cr-im[i+k+len/2]*ci,vi=re[i+k+len/2]*ci+im[i+k+len/2]*cr;re[i+k]=ur+vr;im[i+k]=ui+vi;re[i+k+len/2]=ur-vr;im[i+k+len/2]=ui-vi;const t=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=t}}}};
 T.spec=(x,off,n)=>{const re=new Float64Array(n),im=new Float64Array(n);let wsum=0;for(let i=0;i<n;i++){const w=0.35875-0.48829*Math.cos(2*Math.PI*i/n)+0.14128*Math.cos(4*Math.PI*i/n)-0.01168*Math.cos(6*Math.PI*i/n);re[i]=x[off+i]*w;wsum+=w}T.fft(re,im);const m=new Float64Array(n/2);for(let k=0;k<n/2;k++)m[k]=20*Math.log10(Math.hypot(re[k],im[k])/wsum*2+1e-15);return m};
 T.stats=b=>{let nan=0,pk=0;for(let c=0;c<b.numberOfChannels;c++){const d=b.getChannelData(c);for(let i=0;i<d.length;i++){const v=d[i];if(!isFinite(v))nan++;else if(Math.abs(v)>pk)pk=Math.abs(v)}}const a=analyzeLoudness(b);return{nan,samplePeakDb:+(20*Math.log10(pk)).toFixed(2),I:+a.I.toFixed(2),TP:+a.TP.toFixed(2),LRA:+a.LRA.toFixed(1)}};
+T.voice=(sr,secs)=>{const N=sr*secs,L=new Float32Array(N),R=new Float32Array(N),r=T.rng(2026);
+  const C=MMS.coefs,B=MMS.Biquad,form=[[],[]];
+  [0,1].forEach(c=>{form[c]=[new B(C("peaking",700,sr,6,10)),new B(C("peaking",1200,sr,8,8)),new B(C("peaking",2600,sr,6,6)),new B(C("highpass",80,sr,0.7071))]});
+  let ph=0;
+  for(let i=0;i<N;i++){const t=i/sr,syl=(Math.sin(2*Math.PI*2.4*t)*0.5+0.5); // ~syllable envelope
+    const env=0.15+0.85*Math.pow(syl,1.4)*((t%0.9)<0.65?1:0.15);
+    const f0=165+8*Math.sin(2*Math.PI*0.35*t);
+    ph+=2*Math.PI*f0/sr;let buzz=0;for(let h=1;h<=8;h++)buzz+=Math.sin(ph*h)/h;
+    [L,R].forEach((a,c)=>{let v=buzz*0.22*env;form[c].forEach(q=>v=q.run(v));a[i]=v})}
+  const sib=T.sibilant(sr,secs);for(let i=0;i<N;i++){L[i]+=sib[0][i]*0.55;R[i]+=sib[1][i]*0.55}
+  return[L,R]};

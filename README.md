@@ -57,8 +57,9 @@ optional, 4× oversampled, and off in Smart Master.
 
 Signal flow (export and live preview are the same; any card that is **Off** is bypassed completely):
 ```
-mix → EQ → Saturation → Space FX → Immersive → preset master (optional) → Clean-Up → Mono Bass → Corrective EQ
-    → Dynamic EQ → De-esser → Multiband → Glue Comp → Loudness Auto-Master + Ultra Limiter → Dither → Meter → WAV
+mix → VoxBox (optional) → EQ → Saturation → Space FX → Immersive → preset master (optional) → Clean-Up → Mono Bass
+    → Corrective EQ → Dynamic EQ → De-esser → Multiband → Glue Comp → Loudness Auto-Master + Ultra Limiter
+    → Dither → Meter → WAV
 ```
 
 | Card | What it does |
@@ -98,21 +99,54 @@ Live preview runs the studio chain in an `AudioWorklet` (`mm-studio`, same DSP s
 - A 4-minute song takes ~25 s to Smart-master on a desktop browser; expect roughly 1 minute on an iPad.
 - Preview is an approximation; the export numbers are exact.
 
+
+## VoxBox (vocal presets and plugins)
+A vocal-processing stage that runs **first** (on your take), before the mix tools and the mastering chain.
+Tap a named preset or open any card and switch it on. The master **VoxBox: OFF** toggle bypasses the whole
+stage completely — with it off, exports stay bit-identical to the previous chain.
+
+> **About Waves and ValhallaDSP:** neither has a web SDK, and their plugins cannot run inside a browser.
+> VoxBox processors are **original in-browser code written for this app**, modelled on the *kind* of vocal
+> and space tools used on records. They contain no Waves, Valhalla, SSL or other third-party code, and this
+> project is not affiliated with or endorsed by those companies; names are only used to describe the style.
+
+All processing is time-domain: minimum-phase IIR filters, smooth gain (the same attack/release + second
+one-pole stage as the studio chain), 4×-oversampled `tanh` warmth, Haas doubler, and delay-network reverbs.
+There is **no pitch correction**, no phase vocoder, and **no shimmer** (no pitch-shifted reverb tails), so
+you do not get a robot, warble or "AI" sound.
+
+**Vocal presets:** Rap Lead, Clean R&B, Autotuned Pop (bright stacked pop chain — the name is the style,
+not an autotune effect), Lo-Fi, Radio Ready, Podcast / Voice. Each one sets the cards below; you can tweak
+anything afterwards (the preset then reads Custom).
+
+| Card | What it does |
+|---|---|
+| **Vocal EQ** | 12 dB/oct high-pass plus broad Body (220 Hz), Nasal (900 Hz), Presence (4 kHz) and Air (11 kHz) bands, ±8 dB, curve display. |
+| **Vocal De-esser** | Same split-band design as the studio de-esser (5–10 kHz, smooth capped cut). |
+| **Vocal Comp** | Stereo-linked compressor, 120 Hz sidechain high-pass, soft knee, GR capped at Max GR, makeup and mix (parallel). |
+| **Gate / Expander** | Soft-knee downward expander with a 120 Hz detector high-pass and double-smoothed gain — closes the floor between phrases without chatter or a hard mute. Range caps how far it can shut. |
+| **Warmth** | The same level-matched, 4×-oversampled saturator as the mix Saturation tool, with milder vocal defaults. |
+| **Doubler** | Short left/right Haas delays (about 12–30 ms) and a tiny time wobble, high-passed. Time-domain only — no detune. |
+| **V-Space (Valhalla-style)** | Original plate / hall / room reverbs (dense FDN, Jot decay, loop damping, slow delay-time chorus, early reflections) and a vintage / ping-pong / slap delay with damped feedback and optional tape-style wow. Space presets: Tight Plate, Lush Hall, Intimate Room, Vintage Echo, Slapback, Dream Delay. Tails always decay; no octave shimmer. |
+
+Live preview and export share the same path. Dynamics run in an `AudioWorklet` (`mm-vox`, same `VoxDSP` source;
+ScriptProcessor fallback). Warmth, doubler and V-Space use the Web Audio graph (including on export, with tail).
+
 ## Tools / Chain
 Five tools, each in its own card with an On/Off toggle (cards collapse; tap the title).
 
 **Signal flow (live preview and export are the same):**
 
 ```
-your mix → EQ → Saturation → Space FX → Immersive → preset master (shelves/comp/soft ceiling)
+your mix → VoxBox (optional) → EQ → Saturation → Space FX → Immersive → preset master (shelves/comp/soft ceiling)
         → [studio chain, see Smart Master] → Loudness Auto-Master (LUFS gain + true-peak limiter) → Loudness Meter (read-only) → WAV / speakers
 ```
 
-Why this order: EQ/saturation/FX are *creative* tools, so they shape the raw mix before it is spatialised;
-the immersive stage then places that sound (including reverb tails) in the virtual room; the preset master
-glues it; loudness normalisation and the true-peak limiter go **last** so nothing after them can change the
-LUFS result or push peaks over −1 dBTP. The meter is non-destructive and reads the final output.
-With every tool and Immersive off, the export is bit-identical to the original mastering chain.
+Why this order: VoxBox (when on) prepares a vocal take first; EQ/saturation/FX then shape the mix before
+it is spatialised; the immersive stage places that sound (including reverb tails) in the virtual room; the
+preset master glues it; loudness normalisation and the true-peak limiter go **last** so nothing after them
+can change the LUFS result or push peaks over −1 dBTP. The meter is non-destructive and reads the final output.
+With VoxBox, every tool and Immersive off, the export is bit-identical to the original mastering chain.
 
 | Tool | Inspired by | What it does |
 |---|---|---|

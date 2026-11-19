@@ -3,7 +3,7 @@
    - navigations / index.html: network-first, cache fallback (offline)
    - other same-origin GETs: stale-while-revalidate
    Bump VERSION on every release so old caches are purged. */
-const VERSION = 'melitia-master-v6';
+const VERSION = 'melitia-master-v7';
 const SHELL = [
   './',
   './index.html',

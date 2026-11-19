@@ -56,5 +56,25 @@ console.log('musicalNoise',JSON.stringify(R.musicalNoise));
 // ---------- 6. live preview with studio worklet ----------
 R.preview=await p.evaluate(`(async()=>{await startImmersivePreview();await new Promise(r=>setTimeout(r,3000));const m=document.getElementById('mI').textContent,mode=pv.tail&&pv.tail.mode,run=previewRunning();stopImmersivePreview(false);return{mode,run,meterI:m,head:pv.head.length}})()`);
 console.log('preview',JSON.stringify(R.preview));
+// ---------- 7. VoxBox: off is a no-op; presets on a voice-like signal stay finite and below unity
+R.voxBypass=await p.evaluate(`(async()=>{const sr=48000,s=T.drums(sr,8);audioBuffer=T.buf(s[0],s[1],sr);
+  applyVoxPreset('Off');vox.on=false;
+  await runMaster(currentMasterOpts(),'voxoff');
+  const ab=await masterBlob.arrayBuffer();const h=await crypto.subtle.digest('SHA-256',ab);
+  return{hash:[...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,16),bytes:ab.byteLength,...T.stats(lastMaster)}})()`);
+console.log('voxBypass',JSON.stringify(R.voxBypass));
+R.vox=[];
+for(const preset of ['Rap','RnB','Pop','LoFi','Radio','Podcast']){
+  const r=await p.evaluate(`(async key=>{const sr=48000;const s=T.voice(sr,12);audioBuffer=T.buf(s[0],s[1],sr);
+    applyVoxPreset(key);
+    const t0=performance.now();await runMaster(currentMasterOpts(),'vox '+key);const ms=performance.now()-t0;
+    applyVoxPreset('Off');vox.on=false;
+    return{preset:key,ms:Math.round(ms),active:true,...T.stats(lastMaster)}})(${JSON.stringify(preset)})`);
+  R.vox.push(r);console.log('vox',JSON.stringify(r))}
+R.voxSpace=await p.evaluate(`(async()=>{const sr=48000,s=T.voice(sr,10);audioBuffer=T.buf(s[0],s[1],sr);
+  applyVoxPreset('Off');applyVoxSpacePreset('LushHall');
+  await runMaster(currentMasterOpts(),'vspace');
+  const st=T.stats(lastMaster);applyVoxPreset('Off');vox.on=false;return{preset:'LushHall',...st}})()`);
+console.log('voxSpace',JSON.stringify(R.voxSpace));
 R.consoleErrors=p.errs;console.log('console errors',JSON.stringify(p.errs));
 fs.writeFileSync('results.json',JSON.stringify(R,null,1));await b.close();
