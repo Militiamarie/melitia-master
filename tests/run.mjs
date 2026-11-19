@@ -76,5 +76,31 @@ R.voxSpace=await p.evaluate(`(async()=>{const sr=48000,s=T.voice(sr,10);audioBuf
   await runMaster(currentMasterOpts(),'vspace');
   const st=T.stats(lastMaster);applyVoxPreset('Off');vox.on=false;return{preset:'LushHall',...st}})()`);
 console.log('voxSpace',JSON.stringify(R.voxSpace));
+// ---------- 8. Studio plugin presets (FabFilter/Waves-style originals) + bypass identity ----------
+R.plugins=[];
+for(const preset of ['QVocal','CVocal','CLALead','CLAPunch','SSLChannel','APIPresence','HDelayThrow','HVerbPlate']){
+  const r=await p.evaluate(`(async key=>{const sr=48000;const s=T.voice(sr,12);audioBuffer=T.buf(s[0],s[1],sr);
+    applyVoxPluginPreset(key);
+    const t0=performance.now();await runMaster(currentMasterOpts(),'plug '+key);const ms=performance.now()-t0;
+    applyVoxPreset('Off');vox.on=false;
+    return{preset:key,ms:Math.round(ms),active:true,...T.stats(lastMaster)}})(${JSON.stringify(preset)})`);
+  R.plugins.push(r);console.log('plugin',JSON.stringify(r))}
+// After using plugins, Off must match the earlier VoxBox-off render (same drums fixture as voxBypass)
+R.pluginBypass=await p.evaluate(`(async()=>{const sr=48000,s=T.drums(sr,8);audioBuffer=T.buf(s[0],s[1],sr);
+  applyVoxPluginPreset('QVocal');applyVoxPreset('Off');vox.on=false;
+  await runMaster(currentMasterOpts(),'plugoff');
+  const ab=await masterBlob.arrayBuffer();const h=await crypto.subtle.digest('SHA-256',ab);
+  return{hash:[...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,16),bytes:ab.byteLength,...T.stats(lastMaster)}})()`);
+R.pluginBypass.matchesVoxBypass=R.pluginBypass.hash===R.voxBypass.hash&&R.pluginBypass.bytes===R.voxBypass.bytes;
+console.log('pluginBypass',JSON.stringify(R.pluginBypass));
+// Pro-Q with a real boost must change the file; flatten/off must not
+R.proqIdentity=await p.evaluate(`(async()=>{const sr=48000,s=T.voice(sr,8);audioBuffer=T.buf(s[0],s[1],sr);
+  const hash=async()=>{const ab=await masterBlob.arrayBuffer();const h=await crypto.subtle.digest('SHA-256',ab);return{hash:[...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,16),bytes:ab.byteLength,...T.stats(lastMaster)}};
+  applyVoxPreset('Off');vox.on=false;await runMaster(currentMasterOpts(),'pq0');const off=await hash();
+  applyVoxPluginPreset('QVocal');await runMaster(currentMasterOpts(),'pq1');const on=await hash();
+  vox.proq.bands=defaultProQBands();vox.proq.on=false;vox.on=false;await runMaster(currentMasterOpts(),'pq2');const flat=await hash();
+  applyVoxPreset('Off');vox.on=false;
+  return{off,on,flat,changed:on.hash!==off.hash,flatIsOff:flat.hash===off.hash}})()`);
+console.log('proqIdentity',JSON.stringify(R.proqIdentity));
 R.consoleErrors=p.errs;console.log('console errors',JSON.stringify(p.errs));
 fs.writeFileSync('results.json',JSON.stringify(R,null,1));await b.close();

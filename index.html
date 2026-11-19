@@ -108,7 +108,11 @@ button.ghost.small{padding:9px;font-size:13px}
 .vox-badge{color:#7dd3fc;border-color:rgba(125,211,252,.45)}
 .vox-sub{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin:14px 0 8px}
 #voxPreviewBtn,#voxToggle{width:100%;margin-bottom:10px}
-#voxPresetGrid{margin-top:10px}
+#voxPresetGrid,#voxPluginGrid{margin-top:10px}
+.gr-canvas{width:100%;height:auto;display:block;border-radius:12px;border:1px solid var(--line);background:#000;margin-top:10px}
+.gr-read{font-size:12px;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
+.flag-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px}
+.flag-row span{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -147,7 +151,10 @@ button.ghost.small{padding:9px;font-size:13px}
 <div class="card" id="voxCard"><div class="imm-head"><label class="section">VoxBox</label><span class="imm-badge vox-badge">vocal chain · original</span></div>
 <button type="button" class="toggle" id="voxToggle">VoxBox: OFF</button>
 <div class="presets" id="voxPresetGrid"></div>
-<p class="hint" id="voxHint">Vocal plugins for a lead or voice take: EQ, de-esser, compressor, gate, warmth, doubler, plus Valhalla-style plate / hall / room and vintage delay (original in-browser processors — not affiliated with ValhallaDSP or Waves). All time-domain, no pitch correction, no shimmer. Bypass is complete when VoxBox is off. Preview chain includes this stage.</p>
+<p class="hint" id="voxHint">Vocal plugins for a lead or voice take: EQ, de-esser, compressor, gate, warmth, doubler, plus Valhalla-style plate / hall / room and vintage delay, and original FabFilter-style / Waves-style studio cards below. All are original in-browser processors — not affiliated with FabFilter, Waves Audio Ltd. or ValhallaDSP. Time-domain only, no pitch correction, no shimmer. Bypass is complete when VoxBox is off. Preview chain includes this stage.</p>
+<p class="vox-sub">Studio plugin presets</p>
+<div class="presets" id="voxPluginGrid"></div>
+<p class="hint">Plugin presets load only the named original processors (everything else stays off). Names describe the <em>style</em> of well-known tools; there is no FabFilter or Waves SDK or vendor code in this app.</p>
 <button type="button" class="ghost" id="voxPreviewBtn">Preview chain</button></div>
 <details class="card tool" id="voxEqCard"><summary><span class="tool-title">Vocal EQ<small>HPF · body · nasal · presence · air</small></span><button type="button" class="toggle tool-toggle" id="voxEqToggle">Off</button></summary>
 <canvas id="voxEqCanvas" class="eq-canvas" width="600" height="140" aria-label="Vocal EQ curve"></canvas>
@@ -166,9 +173,11 @@ button.ghost.small{padding:9px;font-size:13px}
 <details class="card tool" id="voxWarmCard"><summary><span class="tool-title">Warmth<small>gentle tanh · 4× oversampled</small></span><button type="button" class="toggle tool-toggle" id="voxWarmToggle">Off</button></summary>
 <div class="sliders" id="voxWarmRows"></div>
 <p class="hint">The same level-matched, 4×-oversampled saturator as the mix Saturation tool, with milder vocal defaults. Darker Tone = warmer, not brighter grit.</p></details>
-<details class="card tool" id="voxDoubleCard"><summary><span class="tool-title">Doubler<small>Haas delays · no pitch shift</small></span><button type="button" class="toggle tool-toggle" id="voxDoubleToggle">Off</button></summary>
+<details class="card tool" id="voxDoubleCard"><summary><span class="tool-title">Doubler<small>Waves-style · Haas voices · no pitch shift</small></span><button type="button" class="toggle tool-toggle" id="voxDoubleToggle">Off</button></summary>
+<div class="presets fx-grid" id="voxDoubleGrid"></div>
+<div class="slider-row"><label for="voxDoubleVoices">Voices</label><select id="voxDoubleVoices"><option value="2">2 voices</option><option value="4">4 voices</option></select><span></span></div>
 <div class="sliders" id="voxDoubleRows"></div>
-<p class="hint">Short left/right delays (about 12–30 ms) and a tiny time wobble, high-passed so the double stays out of the way. Time-domain only — no detune, no robot sound.</p></details>
+<p class="hint">Original in-browser doubler (not affiliated with Waves). Short left/right Haas delays (about 12–30 ms), optional 4-voice stack, and a tiny time wobble, high-passed so the double stays out of the way. Time-domain only — no detune, no robot sound. 2-voice mode matches the previous doubler.</p></details>
 <details class="card tool" id="voxSpaceCard"><summary><span class="tool-title">V-Space (Valhalla-style)<small>plate · hall · room · vintage delay · shimmer-free</small></span><button type="button" class="toggle tool-toggle" id="voxSpaceToggle">Off</button></summary>
 <div class="presets fx-grid" id="voxSpaceGrid"></div>
 <p class="vox-sub">Reverb</p>
@@ -178,6 +187,65 @@ button.ghost.small{padding:9px;font-size:13px}
 <div class="slider-row"><label for="voxDelayMode">Mode</label><select id="voxDelayMode"><option value="vintage">Vintage</option><option value="pingpong">Ping-pong</option><option value="slap">Slapback</option></select><span></span></div>
 <div class="sliders" id="voxDelayRows"></div>
 <p class="hint" id="voxSpaceHint">ValhallaDSP has no web SDK. These are original in-browser processors written for this app (dense FDN plate / hall / room and a damped vintage delay). They contain no Valhalla code, and this project is not affiliated with or endorsed by ValhallaDSP. Tails are time-domain only — no pitch-shifted shimmer, no spectral effects.</p></details>
+<details class="card tool" id="voxProQCard"><summary><span class="tool-title">Pro-Q style EQ<small>visual · 8 bands · drag the dots</small></span><button type="button" class="toggle tool-toggle" id="voxProQToggle">Off</button></summary>
+<canvas id="voxProQCanvas" class="eq-canvas" width="600" height="220" aria-label="Pro-Q style frequency response. Drag a band dot to change frequency and gain."></canvas>
+<div class="band-tabs" id="voxProQTabs"></div>
+<div class="eq-editor">
+<div class="slider-row"><label for="voxProQType">Type</label><select id="voxProQType"><option value="lowshelf">Low shelf</option><option value="peaking">Bell</option><option value="highshelf">High shelf</option><option value="notch">Notch</option><option value="highpass">High-pass</option><option value="lowpass">Low-pass</option></select><span></span></div>
+<div class="slider-row num"><label for="voxProQFreq">Freq (Hz)</label><input type="range" id="voxProQFreq" min="0" max="1000" step="1" value="500" /><input type="number" id="voxProQFreqN" min="20" max="20000" step="1" inputmode="decimal" /></div>
+<div class="slider-row num"><label for="voxProQGain">Gain (dB)</label><input type="range" id="voxProQGain" min="-18" max="18" step="0.1" value="0" /><input type="number" id="voxProQGainN" min="-18" max="18" step="0.1" inputmode="decimal" /></div>
+<div class="slider-row num"><label for="voxProQQ">Q</label><input type="range" id="voxProQQ" min="0.1" max="10" step="0.01" value="1" /><input type="number" id="voxProQQN" min="0.1" max="18" step="0.01" inputmode="decimal" /></div>
+<div class="flag-row"><span>Band enabled</span><button type="button" class="toggle tool-toggle" id="voxProQBandOn">On</button></div>
+<button type="button" class="ghost small" id="voxProQFlat" style="margin-top:10px">Flatten EQ</button>
+</div>
+<p class="hint">Original in-browser parametric EQ with a visual, draggable frequency response (FabFilter has no web SDK; this project is not affiliated with or endorsed by FabFilter). Minimum-phase IIR only — no dynamic/linear-phase/FIR modes, so there is no pre-ring or shimmer. Flat / disabled bands are skipped, so a flattened curve is a complete bypass of this card.</p></details>
+<details class="card tool" id="voxProCCard"><summary><span class="tool-title">Pro-C style Comp<small>visual GR · styles · smooth gain</small></span><button type="button" class="toggle tool-toggle" id="voxProCToggle">Off</button></summary>
+<div class="presets fx-grid" id="voxProCGrid"></div>
+<canvas id="voxProCMeter" class="gr-canvas" width="600" height="72" aria-label="Pro-C style gain-reduction meter"></canvas>
+<p class="gr-read" id="voxProCRead">GR —</p>
+<div class="sliders" id="voxProCRows"></div>
+<p class="hint">Original in-browser compressor with a live gain-reduction meter (not affiliated with FabFilter). Styles change detection and release character only: Clean, Classic, Opto, Vocal, Punch. Stereo-linked, sidechain high-pass, soft knee, GR capped at Max GR, makeup and mix. Smooth gain only — no waveshaping.</p>
+<p class="hint" id="voxProCStat"></p></details>
+<details class="card tool" id="voxClaCard"><summary><span class="tool-title">CLA Vocal Comp<small>Waves-style · Opto / FET</small></span><button type="button" class="toggle tool-toggle" id="voxClaToggle">Off</button></summary>
+<div class="slider-row"><label for="voxClaMode">Mode</label><select id="voxClaMode"><option value="opto">Opto (2A-style)</option><option value="fet">FET (76-style)</option></select><span></span></div>
+<canvas id="voxClaMeter" class="gr-canvas" width="600" height="72" aria-label="CLA-style gain-reduction meter"></canvas>
+<p class="gr-read" id="voxClaRead">GR —</p>
+<div class="sliders" id="voxClaRows"></div>
+<p class="hint">Original in-browser vocal compressor (Waves has no web SDK; this project is not affiliated with or endorsed by Waves Audio Ltd. or Chris Lord-Alge). Opto is slower and program-dependent; FET is faster and punchier. Peak Reduction, Gain and Mix only — smooth gain, no tube/FET modelling distortion.</p>
+<p class="hint" id="voxClaStat"></p></details>
+<details class="card tool" id="voxSslCard"><summary><span class="tool-title">SSL Channel<small>Waves-style strip · filters · EQ · dyn</small></span><button type="button" class="toggle tool-toggle" id="voxSslToggle">Off</button></summary>
+<p class="vox-sub">Filters</p>
+<div class="flag-row"><span>High-pass</span><button type="button" class="toggle tool-toggle" id="voxSslHpfOn">On</button></div>
+<div class="flag-row"><span>Low-pass</span><button type="button" class="toggle tool-toggle" id="voxSslLpfOn">Off</button></div>
+<div class="sliders" id="voxSslFiltRows"></div>
+<p class="vox-sub">EQ</p>
+<div class="slider-row"><label for="voxSslLfShape">Low</label><select id="voxSslLfShape"><option value="shelf">Shelf</option><option value="bell">Bell</option></select><span></span></div>
+<div class="slider-row"><label for="voxSslHfShape">High</label><select id="voxSslHfShape"><option value="shelf">Shelf</option><option value="bell">Bell</option></select><span></span></div>
+<canvas id="voxSslEqCanvas" class="eq-canvas" width="600" height="140" aria-label="SSL-style channel EQ curve"></canvas>
+<div class="sliders" id="voxSslEqRows"></div>
+<p class="vox-sub">Dynamics</p>
+<div class="flag-row"><span>Compressor</span><button type="button" class="toggle tool-toggle" id="voxSslCompOn">On</button></div>
+<canvas id="voxSslMeter" class="gr-canvas" width="600" height="72" aria-label="SSL-style channel compressor gain reduction"></canvas>
+<p class="gr-read" id="voxSslRead">GR —</p>
+<div class="sliders" id="voxSslCompRows"></div>
+<div class="flag-row"><span>Gate / expander</span><button type="button" class="toggle tool-toggle" id="voxSslGateOn">Off</button></div>
+<div class="sliders" id="voxSslGateRows"></div>
+<p class="hint">Original in-browser channel strip (not affiliated with Waves Audio Ltd. or Solid State Logic). Filter → compressor / gate → 4-band EQ. Broad musical bands and smooth gain only.</p>
+<p class="hint" id="voxSslStat"></p></details>
+<details class="card tool" id="voxApiCard"><summary><span class="tool-title">API style EQ<small>proportional Q · 5 bands</small></span><button type="button" class="toggle tool-toggle" id="voxApiToggle">Off</button></summary>
+<canvas id="voxApiCanvas" class="eq-canvas" width="600" height="140" aria-label="API-style proportional-Q EQ curve"></canvas>
+<div class="sliders" id="voxApiRows"></div>
+<button type="button" class="ghost small" id="voxApiFlat" style="margin-top:10px">Flatten</button>
+<p class="hint">Original in-browser EQ (not affiliated with Waves or Automated Processes, Inc.). Five bands with proportional Q: small boosts stay broad, larger boosts get a little tighter, the way an API 550-style EQ feels. Shelves on the ends, bells in the middle. Minimum-phase IIR only.</p></details>
+<details class="card tool" id="voxHSendCard"><summary><span class="tool-title">H-Send (H-Delay / H-Reverb style)<small>send delay · send reverb · shimmer-free</small></span><button type="button" class="toggle tool-toggle" id="voxHSendToggle">Off</button></summary>
+<div class="presets fx-grid" id="voxHSendGrid"></div>
+<p class="vox-sub">H-Delay style</p>
+<div class="slider-row"><label for="voxHDelayMode">Mode</label><select id="voxHDelayMode"><option value="analog">Analog</option><option value="digital">Digital</option><option value="pingpong">Ping-pong</option><option value="multi">Multi-tap</option></select><span></span></div>
+<div class="sliders" id="voxHDelayRows"></div>
+<p class="vox-sub">H-Reverb style</p>
+<div class="slider-row"><label for="voxHVerbMode">Mode</label><select id="voxHVerbMode"><option value="plate">Plate</option><option value="chamber">Chamber</option><option value="hall">Hall</option></select><span></span></div>
+<div class="sliders" id="voxHVerbRows"></div>
+<p class="hint" id="voxHSendHint">Waves has no web SDK. These are original in-browser send effects written for this app (damped delay, including a multi-tap mode, plus a dense FDN reverb). They contain no Waves code, and this project is not affiliated with or endorsed by Waves Audio Ltd. Tails are time-domain only — no pitch-shifted shimmer, no convolution library.</p></details>
 <div class="card chain-card" id="chainCard"><label class="section">Tools / Chain</label>
 <div class="chain-flow"><span>VoxBox</span>→<span>EQ</span>→<span>Saturation</span>→<span>Space FX</span>→<span>Immersive</span>→<span>Preset master</span>→<span>Clean-Up</span>→<span>Mono Bass</span>→<span>Corrective EQ</span>→<span>Dynamic EQ</span>→<span>De-esser</span>→<span>Multiband</span>→<span>Glue</span>→<span>Loudness + Ultra Limiter</span>→<span>Dither</span>→<span>Meter</span></div>
 <p class="hint">VoxBox runs first when it is on (vocal chain on your take), then Tools (EQ / Saturation / Space FX), then immersive, then the preset mastering above (switch it off for the clean path), then the studio chain, then loudness normalisation + true-peak limiting last so the LUFS target and −1 dBTP ceiling hold, then dither on the 16-bit file. The meter only reads. Same order in live preview and export. Any card that is off is bypassed completely.</p>
@@ -876,8 +944,8 @@ function mmWorkletSource(){
   "process(inputs,outputs){const i=inputs[0],o=outputs[0];const n=o[0].length;if(!i||!i.length){for(let c=0;c<o.length;c++)o[c].fill(0);return true}this.d.process([i[0],i[1]||i[0]],[o[0],o[1]||new Float32Array(n)],n,0);return true}}\n"+
   "registerProcessor('mm-studio',MMStudio);\n"+
   "const MMV=("+MM_VOX_SOURCE.toString()+")(MMS);\n"+
-  "class MMVox extends AudioWorkletProcessor{constructor(o){super();this.d=new MMV.VoxDSP(sampleRate,(o.processorOptions||{}).v||{})}\n"+
-  "process(inputs,outputs){const i=inputs[0],o=outputs[0];const n=o[0].length;if(!i||!i.length){for(let c=0;c<o.length;c++)o[c].fill(0);return true}this.d.process([i[0],i[1]||i[0]],[o[0],o[1]||new Float32Array(n)],n,0);return true}}\n"+
+  "class MMVox extends AudioWorkletProcessor{constructor(o){super();this.d=new MMV.VoxDSP(sampleRate,(o.processorOptions||{}).v||{});this.n=0}\n"+
+  "process(inputs,outputs){const i=inputs[0],o=outputs[0];const n=o[0].length;if(!i||!i.length){for(let c=0;c<o.length;c++)o[c].fill(0);return true}this.d.process([i[0],i[1]||i[0]],[o[0],o[1]||new Float32Array(n)],n,0);this.n+=n;if(this.n>=sampleRate/20){this.n=0;this.port.postMessage(this.d.stats())}return true}}\n"+
   "registerProcessor('mm-vox',MMVox);\n"
 }
 async function mmLoadWorklets(ctx){
@@ -1052,15 +1120,17 @@ const MMS=MM_STUDIO_SOURCE();
 </script>
 <script>
 /* ==========================================================================
-   VOXBOX — vocal chain + Valhalla-style space (original, time-domain)
+   VOXBOX — vocal chain + Valhalla-style space + FabFilter/Waves-style tools
    --------------------------------------------------------------------------
-   Processors are original in-browser designs. Waves Audio and ValhallaDSP
-   have no web SDKs; this project is not affiliated with or endorsed by
-   either. No FFT, no phase vocoder, no pitch correction, no shimmer
-   (no pitch-shifted reverb tails). Dynamics use the same smooth
-   attack/release + second one-pole stage as the studio chain.
-   Signal flow (when VoxBox is on): gate → vocal EQ → de-esser → compressor
-   → warmth → doubler → reverb send → delay send → (rest of the app chain).
+   Processors are original in-browser designs. FabFilter, Waves Audio and
+   ValhallaDSP have no web SDKs; this project is not affiliated with or
+   endorsed by those companies. Names describe style only. No FFT, no phase
+   vocoder, no pitch correction, no shimmer (no pitch-shifted reverb tails).
+   Dynamics use the same smooth attack/release + second one-pole stage as
+   the studio chain.
+   Signal flow (when VoxBox is on): gate → vocal EQ → API EQ → Pro-Q →
+   SSL strip → de-esser → vocal comp → Pro-C → CLA → warmth → doubler →
+   V-Space reverb/delay → H-Send delay/reverb → (rest of the app chain).
    ========================================================================== */
 function MM_VOX_SOURCE(MMS){
   "use strict";
@@ -1118,18 +1188,81 @@ function MM_VOX_SOURCE(MMS){
       let gr=this.sm.run(t);gr=this.maxGr*Math.tanh(gr/this.maxGr);this.gr=gr;if(act)this.stat.add(gr);
       const cg=gr>1e-6?Math.pow(10,-gr/20):1,g=(1-this.mix+this.mix*cg)*this.makeup;x[0]*=g;x[1]*=g}
   }
+  function proqBandOn(b){if(!b||b.on===false)return false;const t=b.type||"peaking";if(t==="highpass"||t==="lowpass"||t==="notch")return true;return Math.abs(Number(b.g)||0)>=0.05}
+  class ProQ{
+    constructor(sr,p){this.f=[[],[]];const bands=p.bands||[];
+      for(let c=0;c<2;c++)bands.forEach(b=>{if(!proqBandOn(b))return;const t=b.type||"peaking",f=Math.max(20,Math.min(20000,Number(b.f)||1000));
+        const q=Math.max(0.1,Math.min(18,Number(b.q)||1)),g=Math.max(-18,Math.min(18,Number(b.g)||0));this.f[c].push(new Biquad(coefs(t,f,sr,q,g)))})}
+    frame(x){for(let c=0;c<2;c++){let v=x[c];const f=this.f[c];for(let j=0;j<f.length;j++)v=f[j].run(v);x[c]=v}}
+  }
+  function apiQ(g){return 0.55+0.11*Math.abs(g)}
+  class ApiEQ{
+    constructor(sr,p){this.f=[[],[]];
+      const specs=[["lowshelf",p.lfF||150,p.lfG||0,0.7071],["peaking",p.lmF||400,p.lmG||0,0],["peaking",p.hmF||2500,p.hmG||0,0],["peaking",p.hfF||8000,p.hfG||0,0],["highshelf",p.airF||12000,p.airG||0,0.7071]];
+      for(let c=0;c<2;c++)specs.forEach(s=>{const t=s[0],f=Math.max(20,Math.min(20000,Number(s[1])||1000)),g=Math.max(-12,Math.min(12,Number(s[2])||0));if(Math.abs(g)<0.05)return;const q=s[3]||apiQ(g);this.f[c].push(new Biquad(coefs(t,f,sr,q,g)))})}
+    frame(x){for(let c=0;c<2;c++){let v=x[c];const f=this.f[c];for(let j=0;j<f.length;j++)v=f[j].run(v);x[c]=v}}
+  }
+  const PROC_CHAR={clean:{rms:true,auto:false,knee:8},classic:{rms:false,auto:false,knee:4},opto:{rms:true,auto:true,knee:8},vocal:{rms:false,auto:false,knee:6},punch:{rms:false,auto:false,knee:3}};
+  class ProC{
+    constructor(sr,p){const st=PROC_CHAR[p.style]||PROC_CHAR.vocal;this.thr=Number(p.thr);this.ratio=Math.max(1,Number(p.ratio)||3);this.maxGr=Math.max(0.1,Number(p.maxGr)||10);
+      this.mix=Math.max(0,Math.min(1,(p.mix==null?100:p.mix)/100));this.makeup=Math.pow(10,Math.max(-6,Math.min(12,Number(p.makeup)||0))/20);
+      const att=Math.max(0.2,Number(p.attack)||8),rel=Math.max(20,Number(p.release)||80);this.knee=Math.max(0,p.knee==null?st.knee:Number(p.knee));
+      this.auto=!!st.auto;this.sc=new Biquad(coefs("highpass",100,sr,0.7071));this.ce=tc(st.rms?12:3,sr);this.e=0;
+      this.sm=new GrSmoother(sr,att,rel,3);this.s2=this.auto?new GrSmoother(sr,200,900,3):null;this.stat=new Stat();this.gr=0}
+    frame(x){const s=this.sc.run((x[0]+x[1])*0.5),pw=s*s;this.e=pw+(this.e-pw)*this.ce;let t=0;const act=this.e>ACT;
+      if(act)t=kneeGr((dB(this.e)+3.01)-this.thr,this.ratio,this.knee);
+      let gr=this.sm.run(t);if(this.s2)gr=Math.max(gr,this.s2.run(t));gr=this.maxGr*Math.tanh(gr/this.maxGr);this.gr=gr;if(act)this.stat.add(gr);
+      const cg=gr>1e-6?Math.pow(10,-gr/20):1,g=(1-this.mix+this.mix*cg)*this.makeup;x[0]*=g;x[1]*=g}
+  }
+  class ClaComp{
+    constructor(sr,p){const fet=p.mode==="fet",peak=Math.max(0,Math.min(1,(Number(p.peak)||0)/100));
+      this.thr=-8-peak*22;this.ratio=fet?8:4;this.maxGr=fet?16:12;this.knee=fet?3:8;
+      this.mix=Math.max(0,Math.min(1,(p.mix==null?100:p.mix)/100));this.makeup=Math.pow(10,Math.max(0,Math.min(12,(Number(p.gain)||0)/100*12))/20);
+      this.sc=new Biquad(coefs("highpass",80,sr,0.7071));this.ce=tc(fet?3:10,sr);this.e=0;
+      this.sm=new GrSmoother(sr,fet?0.4:15,fet?70:140,3);this.s2=fet?null:new GrSmoother(sr,220,900,3);this.stat=new Stat();this.gr=0}
+    frame(x){const s=this.sc.run((x[0]+x[1])*0.5),pw=s*s;this.e=pw+(this.e-pw)*this.ce;let t=0;const act=this.e>ACT;
+      if(act)t=kneeGr((dB(this.e)+3.01)-this.thr,this.ratio,this.knee);
+      let gr=this.sm.run(t);if(this.s2)gr=Math.max(gr,this.s2.run(t));gr=this.maxGr*Math.tanh(gr/this.maxGr);this.gr=gr;if(act)this.stat.add(gr);
+      const cg=gr>1e-6?Math.pow(10,-gr/20):1,g=(1-this.mix+this.mix*cg)*this.makeup;x[0]*=g;x[1]*=g}
+  }
+  class SslStrip{
+    constructor(sr,p){this.pre=[[],[]];this.eq=[[],[]];
+      if(p.hpfOn){const f=Math.max(20,Math.min(400,Number(p.hpf)||80));for(let c=0;c<2;c++)this.pre[c].push(new Biquad(coefs("highpass",f,sr,0.7071)))}
+      if(p.lpfOn){const f=Math.max(3000,Math.min(20000,Number(p.lpf)||18000));for(let c=0;c<2;c++)this.pre[c].push(new Biquad(coefs("lowpass",f,sr,0.7071)))}
+      const specs=[];
+      const lfG=Number(p.lfG)||0;if(Math.abs(lfG)>=0.05)specs.push([p.lfBell?"peaking":"lowshelf",p.lfF||80,p.lfBell?1:0.7071,lfG]);
+      const lmfG=Number(p.lmfG)||0;if(Math.abs(lmfG)>=0.05)specs.push(["peaking",p.lmfF||250,Math.max(0.4,Math.min(3,Number(p.lmfQ)||1)),lmfG]);
+      const hmfG=Number(p.hmfG)||0;if(Math.abs(hmfG)>=0.05)specs.push(["peaking",p.hmfF||2500,Math.max(0.4,Math.min(3,Number(p.hmfQ)||1)),hmfG]);
+      const hfG=Number(p.hfG)||0;if(Math.abs(hfG)>=0.05)specs.push([p.hfBell?"peaking":"highshelf",p.hfF||10000,p.hfBell?1:0.7071,hfG]);
+      for(let c=0;c<2;c++)specs.forEach(s=>this.eq[c].push(new Biquad(coefs(s[0],Math.max(20,Math.min(20000,s[1])),sr,s[2],Math.max(-12,Math.min(12,s[3]))))));
+      this.comp=p.compOn?new VoxComp(sr,{thr:p.thr,ratio:p.ratio,attack:p.attack,release:p.release,maxGr:p.maxGr||10,mix:p.mix,makeup:p.makeup}):null;
+      this.gate=p.gateOn?new Gate(sr,{thr:p.gateThr,range:p.gateRange,attack:p.gateAtt,release:p.gateRel,ratio:2}):null;
+      this.stat=this.comp?this.comp.stat:new Stat();this.gr=0}
+    frame(x){for(let c=0;c<2;c++){let v=x[c];const f=this.pre[c];for(let j=0;j<f.length;j++)v=f[j].run(v);x[c]=v}
+      if(this.comp)this.comp.frame(x);if(this.gate)this.gate.frame(x);
+      for(let c=0;c<2;c++){let v=x[c];const f=this.eq[c];for(let j=0;j<f.length;j++)v=f[j].run(v);x[c]=v}
+      this.gr=this.comp?this.comp.gr:0}
+  }
   class VoxDSP{
     constructor(sr,v){this.st=[];this.x=[0,0];
       const add=(k,o)=>{this.st.push(o);this[k]=o};
       if(v.gate&&v.gate.on)add("gate",new Gate(sr,v.gate));
       if(v.eq&&v.eq.on)add("eq",new VocalEQ(sr,v.eq));
+      if(v.api&&v.api.on)add("api",new ApiEQ(sr,v.api));
+      if(v.proq&&v.proq.on)add("proq",new ProQ(sr,v.proq));
+      if(v.ssl&&v.ssl.on)add("ssl",new SslStrip(sr,v.ssl));
       if(v.dess&&v.dess.on)add("dess",new Dess(sr,v.dess));
       if(v.comp&&v.comp.on)add("comp",new VoxComp(sr,v.comp));
+      if(v.proc&&v.proc.on)add("proc",new ProC(sr,v.proc));
+      if(v.cla&&v.cla.on)add("cla",new ClaComp(sr,v.cla));
     }
     get active(){return this.st.length>0}
     process(inp,out,n,off){off=off||0;const st=this.st,ns=st.length,x=this.x,L=inp[0],R=inp[1]||inp[0],oL=out[0],oR=out[1];
       for(let i=0;i<n;i++){x[0]=L[off+i];x[1]=R[off+i];for(let j=0;j<ns;j++)st[j].frame(x);oL[off+i]=x[0];if(oR)oR[off+i]=x[1]}}
-    stats(){const o={};["gate","dess","comp"].forEach(k=>{if(this[k])o[k]=this[k].stat.get()});return o}
+    stats(){const o={};["gate","dess","comp","proc","cla"].forEach(k=>{if(this[k])o[k]=this[k].stat.get()});
+      if(this.ssl){o.ssl=this.ssl.stat.get();if(this.ssl.gate)o.sslGate=this.ssl.gate.stat.get()}
+      o.gr={proc:this.proc?this.proc.gr:0,cla:this.cla?this.cla.gr:0,ssl:this.ssl?this.ssl.gr:0};
+      return o}
   }
   return{VoxDSP,VEQ_BANDS}
 }
@@ -1169,28 +1302,69 @@ const VOX_SPACE_PRESETS={
   Slapback:{label:"Slapback",blurb:"Short throw",verb:{on:false,mode:"plate",mix:0,size:20,decay:14,tone:50,pre:8},delay:{on:true,mode:"slap",mix:16,time:16,feedback:8,tone:50,age:18},hint:"Classic 80–130 ms slap, almost no feedback."},
   DreamDelay:{label:"Dream Delay",blurb:"Long · dark · no shimmer",verb:{on:true,mode:"hall",mix:10,size:55,decay:48,tone:42,pre:24},delay:{on:true,mode:"vintage",mix:20,time:58,feedback:42,tone:30,age:40},hint:"Long dark delay plus a soft hall. Time-domain only — no octave shimmer."}
 };
-const vox={on:false,preset:"Off",spacePreset:null,
+function defaultProQBands(){return[{on:false,type:"highpass",f:40,g:0,q:0.7071},{on:true,type:"lowshelf",f:80,g:0,q:0.7},{on:true,type:"peaking",f:200,g:0,q:1.1},{on:true,type:"peaking",f:500,g:0,q:1.1},{on:true,type:"peaking",f:1200,g:0,q:1},{on:true,type:"peaking",f:3500,g:0,q:1},{on:true,type:"highshelf",f:10000,g:0,q:0.7},{on:false,type:"lowpass",f:18000,g:0,q:0.7071}]}
+const VOX_DEFAULT={on:false,preset:"Off",spacePreset:null,pluginPreset:null,
   eq:{on:false,hpf:80,body:0,nasal:0,presence:0,air:0},
   dess:{on:false,freq:7000,thr:-16,max:6},
   comp:{on:false,thr:-18,ratio:3,attack:8,release:80,maxGr:8,mix:100,makeup:0},
   gate:{on:false,thr:-40,range:12,attack:2,release:80,ratio:2},
   warm:{on:false,drive:20,tone:-20,mix:40},
-  double:{on:false,mix:25,width:80,time:18},
+  double:{on:false,mix:25,width:80,time:18,voices:2},
   verb:{on:false,mode:"plate",mix:12,size:40,decay:35,tone:55,pre:20},
-  delay:{on:false,mode:"vintage",mix:10,time:35,feedback:25,tone:45,age:30}
+  delay:{on:false,mode:"vintage",mix:10,time:35,feedback:25,tone:45,age:30},
+  proq:{on:false,sel:0,bands:defaultProQBands()},
+  proc:{on:false,style:"vocal",thr:-18,ratio:3,attack:8,release:80,knee:6,maxGr:10,makeup:0,mix:100},
+  cla:{on:false,mode:"opto",peak:40,gain:35,mix:100},
+  ssl:{on:false,hpf:80,hpfOn:true,lpf:18000,lpfOn:false,lfF:80,lfG:0,lfBell:false,lmfF:250,lmfG:0,lmfQ:1,hmfF:2500,hmfG:0,hmfQ:1,hfF:10000,hfG:0,hfBell:false,compOn:true,thr:-18,ratio:4,attack:3,release:100,makeup:1,mix:100,maxGr:8,gateOn:false,gateThr:-40,gateRange:12,gateAtt:2,gateRel:80},
+  api:{on:false,lfF:150,lfG:0,lmF:400,lmG:0,hmF:2500,hmG:0,hfF:8000,hfG:0,airF:12000,airG:0},
+  hsend:{delay:{on:false,mode:"analog",mix:12,time:35,feedback:28,tone:48,lofi:25},verb:{on:false,mode:"chamber",mix:10,size:42,decay:38,tone:52,pre:16}}
 };
+const vox=JSON.parse(JSON.stringify(VOX_DEFAULT));
 function voxSnapshot(){return JSON.parse(JSON.stringify(vox))}
-function voxDspActive(v){v=v||vox;return!!(v.eq.on||v.dess.on||v.comp.on||v.gate.on)}
-function voxFxActive(v){v=v||vox;return!!(v.warm.on||v.double.on||v.verb.on||v.delay.on)}
+function voxHSendOn(v){v=v||vox;return!!(v.hsend&&(v.hsend.delay.on||v.hsend.verb.on))}
+function voxDspActive(v){v=v||vox;return!!(v.eq.on||v.dess.on||v.comp.on||v.gate.on||(v.proq&&v.proq.on)||(v.proc&&v.proc.on)||(v.cla&&v.cla.on)||(v.ssl&&v.ssl.on)||(v.api&&v.api.on))}
+function voxFxActive(v){v=v||vox;return!!(v.warm.on||v.double.on||v.verb.on||v.delay.on||voxHSendOn(v))}
 function voxActive(v){v=v||vox;return!!(v.on&&(voxDspActive(v)||voxFxActive(v)))}
-function voxLabel(){if(!voxActive())return"";const p=VOX_PRESETS[vox.preset];return" + VoxBox"+(p&&vox.preset!=="Off"?" "+p.label:"")}
-function voxAssign(dst,src){Object.keys(src).forEach(k=>{if(src[k]&&typeof src[k]==="object"&&!Array.isArray(src[k]))Object.assign(dst[k],src[k]);else if(k!=="label"&&k!=="blurb"&&k!=="hint")dst[k]=src[k]})}
+function voxLabel(){if(!voxActive())return"";const pl=vox.pluginPreset&&VOX_PLUGIN_PRESETS[vox.pluginPreset];if(pl)return" + VoxBox "+pl.label;const p=VOX_PRESETS[vox.preset];return" + VoxBox"+(p&&vox.preset!=="Off"?" "+p.label:"")}
+function voxCopyInto(dst,src){Object.keys(src).forEach(k=>{if(k==="label"||k==="blurb"||k==="hint")return;if(Array.isArray(src[k]))dst[k]=src[k].map(x=>x&&typeof x==="object"?Object.assign({},x):x);else if(src[k]&&typeof src[k]==="object"){if(!dst[k]||typeof dst[k]!=="object"||Array.isArray(dst[k]))dst[k]={};voxCopyInto(dst[k],src[k])}else dst[k]=src[k]})}
+function voxAssign(dst,src){voxCopyInto(dst,src)}
+function voxResetPlugins(){const d=JSON.parse(JSON.stringify(VOX_DEFAULT));["proq","proc","cla","ssl","api","hsend"].forEach(k=>voxCopyInto(vox[k],d[k]));vox.double.voices=2;vox.pluginPreset=null}
+function voxResetAll(){const d=JSON.parse(JSON.stringify(VOX_DEFAULT));["eq","dess","comp","gate","warm","double","verb","delay","proq","proc","cla","ssl","api","hsend"].forEach(k=>voxCopyInto(vox[k],d[k]));vox.pluginPreset=null;vox.spacePreset=null}
 function applyVoxPreset(key){
   const p=VOX_PRESETS[key];if(!p)return;
-  vox.preset=key;vox.spacePreset=null;
+  vox.preset=key;vox.spacePreset=null;vox.pluginPreset=null;
   if(key==="Off"){vox.on=false;return}
-  vox.on=true;voxAssign(vox,p);
+  voxResetPlugins();vox.on=true;voxAssign(vox,p);
 }
+const VOX_PLUGIN_PRESETS={
+  QVocal:{label:"Pro-Q Vocal",blurb:"Visual EQ · clean",hint:"Original Pro-Q-style visual EQ (not affiliated with FabFilter): high-pass, a little body/nasal cut, presence and air. Other VoxBox cards stay off.",
+    proq:{on:true,sel:4,bands:[{on:true,type:"highpass",f:80,g:0,q:0.7071},{on:true,type:"lowshelf",f:120,g:-0.5,q:0.7},{on:true,type:"peaking",f:280,g:-1,q:1.2},{on:true,type:"peaking",f:900,g:-1.5,q:1.4},{on:true,type:"peaking",f:3000,g:2,q:1.1},{on:true,type:"peaking",f:5000,g:0.5,q:1},{on:true,type:"highshelf",f:11000,g:1.5,q:0.7},{on:false,type:"lowpass",f:18000,g:0,q:0.7071}]}},
+  CVocal:{label:"Pro-C Vocal",blurb:"Smooth GR",hint:"Original Pro-C-style vocal compressor with a visual gain-reduction meter (not affiliated with FabFilter). Soft knee, 3:1, modest makeup.",
+    proc:{on:true,style:"vocal",thr:-18,ratio:3,attack:8,release:90,knee:6,maxGr:8,makeup:2,mix:100}},
+  CLALead:{label:"CLA Lead",blurb:"Opto glue",hint:"Original CLA-style opto compressor (not affiliated with Waves). Slower, program-dependent release — glue for a sung or spoken lead.",
+    cla:{on:true,mode:"opto",peak:45,gain:40,mix:100}},
+  CLAPunch:{label:"CLA Punch",blurb:"FET snap",hint:"Original CLA-style FET compressor (not affiliated with Waves). Faster attack and a higher ratio for a rap or aggressive lead.",
+    cla:{on:true,mode:"fet",peak:35,gain:38,mix:100}},
+  SSLChannel:{label:"SSL Channel",blurb:"Strip · vocal",hint:"Original SSL-style channel strip (not affiliated with Waves or Solid State Logic): 80 Hz high-pass, a little low-mid cut, presence and air, light bus-style compression.",
+    ssl:{on:true,hpf:80,hpfOn:true,lpf:18000,lpfOn:false,lfF:80,lfG:0,lfBell:false,lmfF:250,lmfG:-1,lmfQ:1,hmfF:3000,hmfG:2,hmfQ:1.1,hfF:12000,hfG:1,hfBell:false,compOn:true,thr:-16,ratio:4,attack:3,release:80,makeup:1.5,mix:100,maxGr:8,gateOn:false,gateThr:-40,gateRange:12,gateAtt:2,gateRel:80}},
+  APIPresence:{label:"API Presence",blurb:"Proportional Q",hint:"Original API-style EQ (not affiliated with Waves or API): a nasal dip, presence and air with proportional Q — small moves stay broad.",
+    api:{on:true,lfF:150,lfG:0,lmF:400,lmG:-1,hmF:2500,hmG:2,hfF:5000,hfG:1,airF:12000,airG:1.5}},
+  HDelayThrow:{label:"H-Delay Throw",blurb:"Analog send",hint:"Original H-Delay-style analog send (not affiliated with Waves). A damped, slightly worn throw. No pitch-shifted repeats.",
+    hsend:{delay:{on:true,mode:"analog",mix:16,time:32,feedback:28,tone:45,lofi:30},verb:{on:false,mode:"chamber",mix:0,size:40,decay:35,tone:50,pre:16}}},
+  HVerbPlate:{label:"H-Verb Plate",blurb:"Send plate",hint:"Original H-Reverb-style plate send (not affiliated with Waves). Dense, unpitched tail — time-domain FDN, no shimmer.",
+    hsend:{delay:{on:false,mode:"digital",mix:0,time:30,feedback:20,tone:55,lofi:10},verb:{on:true,mode:"plate",mix:14,size:36,decay:30,tone:60,pre:14}}}
+};
+const VOX_DOUBLE_PRESETS={Tight:{label:"Tight",blurb:"Close · 2 voice",mix:18,width:60,time:14,voices:2},Wide:{label:"Wide",blurb:"Haas · 2 voice",mix:28,width:95,time:22,voices:2},Quad:{label:"Quad",blurb:"4 voice stack",mix:24,width:90,time:16,voices:4}};
+const VOX_PROC_STYLES={clean:{label:"Clean",blurb:"Gentle RMS",style:"clean",thr:-20,ratio:2,attack:12,release:120,knee:8,maxGr:6,makeup:1,mix:100},classic:{label:"Classic",blurb:"Peak · firmer",style:"classic",thr:-18,ratio:4,attack:5,release:80,knee:4,maxGr:8,makeup:2,mix:100},opto:{label:"Opto",blurb:"Slow release",style:"opto",thr:-18,ratio:3,attack:15,release:140,knee:8,maxGr:8,makeup:2,mix:100},vocal:{label:"Vocal",blurb:"Lead default",style:"vocal",thr:-18,ratio:3,attack:8,release:90,knee:6,maxGr:8,makeup:2,mix:100},punch:{label:"Punch",blurb:"Fast attack",style:"punch",thr:-16,ratio:4,attack:1,release:60,knee:3,maxGr:8,makeup:2,mix:100}};
+const VOX_HSEND_PRESETS={AnalogThrow:{label:"Analog throw",blurb:"H-Delay style",hint:"Damped analog-style delay send.",delay:{on:true,mode:"analog",mix:16,time:32,feedback:28,tone:45,lofi:30},verb:{on:false,mode:"chamber",mix:0,size:40,decay:35,tone:50,pre:16}},DigitalSlap:{label:"Digital slap",blurb:"Clean delay",hint:"Cleaner digital-style slap / eighth.",delay:{on:true,mode:"digital",mix:14,time:18,feedback:12,tone:70,lofi:8},verb:{on:false,mode:"plate",mix:0,size:30,decay:24,tone:60,pre:12}},PingPong:{label:"Ping-pong",blurb:"Stereo bounce",hint:"Ping-pong send, moderate feedback.",delay:{on:true,mode:"pingpong",mix:15,time:36,feedback:30,tone:55,lofi:15},verb:{on:false,mode:"hall",mix:0,size:50,decay:40,tone:50,pre:20}},MultiTap:{label:"Multi-tap",blurb:"Rhythmic taps",hint:"Three decaying taps, almost no feedback smear.",delay:{on:true,mode:"multi",mix:16,time:28,feedback:18,tone:55,lofi:12},verb:{on:false,mode:"plate",mix:0,size:30,decay:24,tone:55,pre:12}},PlateSend:{label:"Plate send",blurb:"H-Verb style",hint:"Dense plate send, unpitched tail.",delay:{on:false,mode:"analog",mix:0,time:30,feedback:20,tone:50,lofi:15},verb:{on:true,mode:"plate",mix:14,size:36,decay:30,tone:60,pre:14}},ChamberSend:{label:"Chamber send",blurb:"Intimate",hint:"Smaller chamber-style send.",delay:{on:false,mode:"analog",mix:0,time:24,feedback:16,tone:48,lofi:10},verb:{on:true,mode:"chamber",mix:12,size:28,decay:22,tone:48,pre:10}}};
+function applyVoxPluginPreset(key){
+  const p=VOX_PLUGIN_PRESETS[key];if(!p)return;
+  voxResetAll();vox.on=true;vox.preset="Custom";vox.pluginPreset=key;voxAssign(vox,p);
+}
+function applyVoxDoublePreset(key){const p=VOX_DOUBLE_PRESETS[key];if(!p)return;vox.double.on=true;vox.double.mix=p.mix;vox.double.width=p.width;vox.double.time=p.time;vox.double.voices=p.voices;vox.on=true;vox.pluginPreset=null;if(vox.preset!=="Custom"&&vox.preset!=="Off")vox.preset="Custom"}
+function applyVoxProcStyle(key){const p=VOX_PROC_STYLES[key];if(!p)return;vox.proc.on=true;vox.proc.style=p.style;vox.proc.thr=p.thr;vox.proc.ratio=p.ratio;vox.proc.attack=p.attack;vox.proc.release=p.release;vox.proc.knee=p.knee;vox.proc.maxGr=p.maxGr;vox.proc.makeup=p.makeup;vox.proc.mix=p.mix;vox.on=true;vox.pluginPreset=null;if(vox.preset!=="Custom"&&vox.preset!=="Off")vox.preset="Custom"}
+function applyVoxHSendPreset(key){const p=VOX_HSEND_PRESETS[key];if(!p)return;vox.on=true;vox.pluginPreset=null;vox.preset="Custom";Object.assign(vox.hsend.delay,p.delay);Object.assign(vox.hsend.verb,p.verb)}
+
 function applyVoxSpacePreset(key){
   const p=VOX_SPACE_PRESETS[key];if(!p)return;
   vox.on=true;vox.spacePreset=key;vox.preset="Custom";
@@ -1215,19 +1389,32 @@ function buildVoxDoubleGraph(ctx,input,s,liveOut){
   const wL=G(mix*(0.5+0.5*width)),wR=G(mix*(0.5+0.5*width)),cL=G(mix*(1-width)*0.5),cR=G(mix*(1-width)*0.5);
   dL.connect(wL);dR.connect(wR);dL.connect(cR);dR.connect(cL);
   wL.connect(merge,0,0);cL.connect(merge,0,0);wR.connect(merge,0,1);cR.connect(merge,0,1);
+  if((s.voices|0)===4){
+    const t2=Math.max(0.006,time*0.001*0.55),t3=Math.min(0.055,(time+5)*0.001),d2=ctx.createDelay(0.08),d3=ctx.createDelay(0.08);d2.delayTime.value=t2;d3.delayTime.value=t3;
+    split.connect(d2,0);split.connect(d3,1);
+    const lfo2=ctx.createOscillator();lfo2.type="sine";lfo2.frequency.value=0.19;const g2=G(depth);lfo2.connect(g2);g2.connect(d2.delayTime);lfo2.start(ctx.currentTime+0.2);
+    const lfo3=ctx.createOscillator();lfo3.type="sine";lfo3.frequency.value=0.31;const g3=G(depth);lfo3.connect(g3);g3.connect(d3.delayTime);lfo3.start(ctx.currentTime+0.55);
+    if(liveOut){(liveOut.osc=liveOut.osc||[]).push(lfo2,lfo3)}
+    const q=mix*0.55,w2=G(q*(0.5+0.5*width)),w3=G(q*(0.5+0.5*width)),c2=G(q*(1-width)*0.5),c3=G(q*(1-width)*0.5);
+    d2.connect(w2);d3.connect(w3);d2.connect(c3);d3.connect(c2);
+    w2.connect(merge,0,0);c2.connect(merge,0,0);w3.connect(merge,0,1);c3.connect(merge,0,1);
+  }
   merge.connect(out);return out
 }
 // ---- Valhalla-style reverb: dense FDN plate / hall / room, shimmer-free ----
 function voxVerbParams(s){
-  const mode=s.mode==="hall"||s.mode==="room"?s.mode:"plate";
+  const raw=s.mode==="hall"||s.mode==="room"||s.mode==="chamber"?s.mode:"plate";
+  const mode=raw==="chamber"?"room":raw;
   const size=tClamp(s.size,0,100)/100,decay=tClamp(s.decay,0,100)/100,tone=tClamp(s.tone,0,100)/100,pre=tClamp(s.pre,0,100)/100,mix=tClamp(s.mix,0,100)/100;
   const rt=mode==="hall"?0.5+decay*3.5:mode==="room"?0.18+decay*0.7:0.3+decay*1.6;
   const T=mode==="hall"?0.03+size*0.10:mode==="room"?0.012+size*0.03:0.018+size*0.055;
   const lp=600*Math.pow(22,tone),hp=mode==="hall"?80:mode==="room"?120:100;
   const pred=0.004+pre*(mode==="hall"?0.06:0.03);
   const ratios=mode==="room"?[0.19,0.23,0.29,0.31,0.37,0.41]:mode==="hall"?[0.61,0.73,0.83,0.97,1.09,1.19,1.31,1.47]:[0.37,0.41,0.43,0.47,0.53,0.59,0.67,0.73];
-  const early=mode==="room"?0.7:mode==="hall"?0.35:0.45;
-  const mod=mode==="room"?0.002:0.004;
+  let early=mode==="room"?0.7:mode==="hall"?0.35:0.45;
+  let mod=mode==="room"?0.002:0.004;
+  if(s.flavor==="h"){early=Math.min(0.85,early+0.12);mod*=0.7}
+  if(raw==="chamber"){early=Math.min(0.85,early+0.08)}
   return{mode,mix,rt,T,lp,hp,pred,ratios,early,mod}
 }
 function voxVerbTail(s){if(!s||!s.on)return 0;const P=voxVerbParams(s);return P.pred+P.rt+0.4}
@@ -1307,20 +1494,44 @@ function buildVoxDelayGraph(ctx,input,s,liveOut){
   }
   const wet=G(Math.sin(P.mix*Math.PI/2));merge.connect(wet);wet.connect(out);return out
 }
-function voxTailSeconds(v){v=v||vox;return Math.max(v.verb.on?voxVerbTail(v.verb):0,v.delay.on?voxDelayTail(v.delay):0,v.double.on?0.08:0)}
-function mmMakeVoxNode(ctx,useWorklet,v){
+function hDelayMapped(s){const mode=s.mode==="digital"||s.mode==="pingpong"||s.mode==="multi"?s.mode:"analog";
+  const lofi=tClamp(s.lofi,0,100);
+  return{on:true,mode:mode==="pingpong"?"pingpong":"vintage",mix:s.mix,time:s.time,feedback:s.feedback,tone:mode==="digital"?Math.min(100,(Number(s.tone)||50)+20):s.tone,age:mode==="digital"?Math.min(lofi,15):Math.max(lofi,10)}}
+function hDelayTail(s){if(!s||!s.on)return 0;if(s.mode==="multi"){const t=0.09+tClamp(s.time,0,100)/100*0.46;return t*3+0.3}return voxDelayTail(hDelayMapped(s))}
+function buildHDelayGraph(ctx,input,s,liveOut){
+  if((s.mode||"analog")!=="multi")return buildVoxDelayGraph(ctx,input,hDelayMapped(s),liveOut);
+  const mix=tClamp(s.mix,0,100)/100,time=tClamp(s.time,0,100)/100,fb=tClamp(s.feedback,0,100)/100,tone=tClamp(s.tone,0,100)/100;
+  const t=0.09+time*0.46,lp=800*Math.pow(16,tone);const G=v=>{const g=ctx.createGain();g.gain.value=v;return g};
+  const out=G(1);out.channelCount=2;out.channelCountMode="explicit";
+  const dry=G(Math.cos(mix*Math.PI/2));input.connect(dry);dry.connect(out);if(mix<=0.001)return out;
+  const inSt=G(1);inSt.channelCount=2;inSt.channelCountMode="explicit";inSt.channelInterpretation="speakers";input.connect(inSt);
+  const split=ctx.createChannelSplitter(2);inSt.connect(split);const merge=ctx.createChannelMerger(2);
+  const hp=ctx.createBiquadFilter();hp.type="highpass";hp.frequency.value=120;hp.Q.value=BW_Q_DB;const mono=G(0.5);split.connect(mono,0);split.connect(mono,1);mono.connect(hp);
+  const taps=[[1,0.7,0],[2,0.45,1],[3,0.25,0]];
+  taps.forEach(([k,g,c])=>{const d=ctx.createDelay(2);d.delayTime.value=Math.min(1.8,t*k);const lpN=ctx.createBiquadFilter();lpN.type="lowpass";lpN.frequency.value=lp;lpN.Q.value=BW_Q_DB;const gn=G(g);hp.connect(d);d.connect(lpN);lpN.connect(gn);gn.connect(merge,0,c)});
+  if(fb>0.05){const fbD=ctx.createDelay(2);fbD.delayTime.value=Math.min(1.8,t);const fblp=ctx.createBiquadFilter();fblp.type="lowpass";fblp.frequency.value=lp*0.8;fblp.Q.value=BW_Q_DB;const fbg=G(Math.min(0.55,fb*0.5));hp.connect(fbD);fbD.connect(fblp);fblp.connect(fbg);fbg.connect(fbD);fbg.connect(merge,0,1)}
+  const wet=G(Math.sin(mix*Math.PI/2));merge.connect(wet);wet.connect(out);return out
+}
+function hVerbMapped(s){const mode=s.mode==="hall"?"hall":s.mode==="chamber"?"chamber":"plate";return{on:true,mode,mix:s.mix,size:s.size,decay:s.decay,tone:s.tone,pre:s.pre,flavor:"h"}}
+function hVerbTail(s){if(!s||!s.on)return 0;return voxVerbTail(hVerbMapped(s))}
+function buildHVerbGraph(ctx,input,s,liveOut){return buildVoxVerbGraph(ctx,input,hVerbMapped(s),liveOut)}
+function voxTailSeconds(v){v=v||vox;const hd=v.hsend&&v.hsend.delay&&v.hsend.delay.on?hDelayTail(v.hsend.delay):0,hv=v.hsend&&v.hsend.verb&&v.hsend.verb.on?hVerbTail(v.hsend.verb):0;return Math.max(v.verb.on?voxVerbTail(v.verb):0,v.delay.on?voxDelayTail(v.delay):0,v.double.on?0.08:0,hd,hv)}
+
+function mmMakeVoxNode(ctx,useWorklet,v,onStats){
   const opts={numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],channelCount:2,channelCountMode:"explicit",channelInterpretation:"speakers"};
-  if(useWorklet)return new AudioWorkletNode(ctx,"mm-vox",Object.assign({processorOptions:{v}},opts));
-  const d=new MMV.VoxDSP(ctx.sampleRate,v),sp=ctx.createScriptProcessor(2048,2,2);
-  sp.onaudioprocess=e=>{const ib=e.inputBuffer,ob=e.outputBuffer;d.process([ib.getChannelData(0),ib.getChannelData(1)],[ob.getChannelData(0),ob.getChannelData(1)],ib.length,0)};return sp
+  if(useWorklet){const n=new AudioWorkletNode(ctx,"mm-vox",Object.assign({processorOptions:{v}},opts));if(onStats)n.port.onmessage=e=>onStats(e.data);return n}
+  const d=new MMV.VoxDSP(ctx.sampleRate,v),sp=ctx.createScriptProcessor(2048,2,2);let tick=0;
+  sp.onaudioprocess=e=>{const ib=e.inputBuffer,ob=e.outputBuffer;d.process([ib.getChannelData(0),ib.getChannelData(1)],[ob.getChannelData(0),ob.getChannelData(1)],ib.length,0);if(onStats){tick+=ib.length;if(tick>=ctx.sampleRate/20){tick=0;onStats(d.stats())}}};return sp
 }
 function buildVoxGraph(ctx,input,v,liveOut,useWorklet){
   let node=input;const head=[];
-  if(voxDspActive(v)){const vn=mmMakeVoxNode(ctx,!!useWorklet,v);node.connect(vn);node=vn;head.push(vn);if(liveOut)liveOut.vox=vn}
+  if(voxDspActive(v)){const vn=mmMakeVoxNode(ctx,!!useWorklet,v,typeof onVoxLiveStats==="function"?onVoxLiveStats:null);node.connect(vn);node=vn;head.push(vn);if(liveOut)liveOut.vox=vn}
   if(v.warm.on)node=buildSatGraph(ctx,node,v.warm);
   if(v.double.on)node=buildVoxDoubleGraph(ctx,node,v.double,liveOut);
   if(v.verb.on)node=buildVoxVerbGraph(ctx,node,v.verb,liveOut);
   if(v.delay.on)node=buildVoxDelayGraph(ctx,node,v.delay,liveOut);
+  if(v.hsend&&v.hsend.delay&&v.hsend.delay.on)node=buildHDelayGraph(ctx,node,v.hsend.delay,liveOut);
+  if(v.hsend&&v.hsend.verb&&v.hsend.verb.on)node=buildHVerbGraph(ctx,node,v.hsend.verb,liveOut);
   if(liveOut)liveOut.voxHead=head;
   return node
 }
@@ -1340,6 +1551,8 @@ async function renderVoxFx(buffer,v){
   if(v.double.on)node=buildVoxDoubleGraph(off,node,v.double);
   if(v.verb.on)node=buildVoxVerbGraph(off,node,v.verb);
   if(v.delay.on)node=buildVoxDelayGraph(off,node,v.delay);
+  if(v.hsend&&v.hsend.delay&&v.hsend.delay.on)node=buildHDelayGraph(off,node,v.hsend.delay);
+  if(v.hsend&&v.hsend.verb&&v.hsend.verb.on)node=buildHVerbGraph(off,node,v.hsend.verb);
   node.connect(off.destination);src.start(0);
   const r=await off.startRendering();
   let bad=false;for(let c=0;c<2&&!bad;c++){const d=r.getChannelData(c);for(let i=0;i<d.length;i+=97)if(!isFinite(d[i])){bad=true;break}}
@@ -1736,27 +1949,52 @@ drawCeq();
 <script>
 /* ---- VoxBox UI (presets, cards, live-preview hooks) ---- */
 function showVoxStats(st){const f=o=>o?"avg −"+o.avg.toFixed(1)+" dB · max −"+o.max.toFixed(1)+" dB":"–";
-  const d=$("voxDessStat"),c=$("voxCompStat"),g=$("voxGateStat");
+  const d=$("voxDessStat"),c=$("voxCompStat"),g=$("voxGateStat"),pc=$("voxProCStat"),cl=$("voxClaStat"),ss=$("voxSslStat");
   if(d)d.textContent=st&&st.dess?"Last export · "+f(st.dess):"";
   if(c)c.textContent=st&&st.comp?"Last export · "+f(st.comp):"";
-  if(g)g.textContent=st&&st.gate?"Last export · "+f(st.gate):""}
-function voxMarkCustom(spaceToo){if(vox.preset!=="Custom"&&vox.preset!=="Off")vox.preset="Custom";if(spaceToo)vox.spacePreset=null;syncVoxPresets();syncVoxSpacePresets()}
-function voxOnChange(){if(voxDspActive()||voxFxActive())vox.on=true;voxMarkCustom(false);syncVoxMaster();drawVoxEq();restartPreviewSoon()}
+  if(g)g.textContent=st&&st.gate?"Last export · "+f(st.gate):"";
+  if(pc)pc.textContent=st&&st.proc?"Last export · "+f(st.proc):"";
+  if(cl)cl.textContent=st&&st.cla?"Last export · "+f(st.cla):"";
+  if(ss)ss.textContent=st&&st.ssl?"Last export · comp "+f(st.ssl)+(st.sslGate?" · gate "+f(st.sslGate):""):"";
+  if(st&&st.gr){["proc","cla","ssl"].forEach(k=>{if(st.gr[k]!=null)pushVoxGr(k,st.gr[k])});drawVoxMeters()}}
+const voxGrHist={proc:[],cla:[],ssl:[]};let voxLiveGr=null;
+function pushVoxGr(k,v){const a=voxGrHist[k];if(!a)return;a.push(Math.max(0,Number(v)||0));if(a.length>180)a.shift()}
+function onVoxLiveStats(st){voxLiveGr=st;if(st&&st.gr)["proc","cla","ssl"].forEach(k=>{if(st.gr[k]!=null)pushVoxGr(k,st.gr[k])});drawVoxMeters()}
+function drawGrMeter(canvas,hist,gr,color){if(!canvas||!canvas.getContext)return;const g=canvas.getContext("2d"),W=600,H=72;
+  g.clearRect(0,0,W,H);g.fillStyle="rgba(0,0,0,.35)";g.fillRect(0,0,W,H);
+  g.strokeStyle="rgba(255,255,255,.08)";g.beginPath();g.moveTo(0,H-8);g.lineTo(W,H-8);g.stroke();
+  if(hist&&hist.length){g.beginPath();hist.forEach((v,i)=>{const x=i/Math.max(1,hist.length-1)*W,y=H-8-(Math.min(12,v)/12)*(H-20);i?g.lineTo(x,y):g.moveTo(x,y)});g.strokeStyle=color;g.lineWidth=1.6;g.stroke()}
+  const h=(Math.min(12,gr||0)/12)*(H-20);g.fillStyle=color;g.globalAlpha=.9;g.fillRect(W-18,H-8-h,12,Math.max(0,h));g.globalAlpha=1;
+  g.fillStyle="rgba(255,255,255,.45)";g.font="10px system-ui";g.fillText("0 dB",4,12);g.fillText("−12",4,H-6)}
+function drawVoxMeters(){const gr=(voxLiveGr&&voxLiveGr.gr)||{};const fmt=v=>"GR "+(v?("−"+Number(v).toFixed(1)+" dB"):"—");
+  drawGrMeter($("voxProCMeter"),voxGrHist.proc,gr.proc||0,"#7dd3fc");if($("voxProCRead"))$("voxProCRead").textContent=fmt(gr.proc);
+  drawGrMeter($("voxClaMeter"),voxGrHist.cla,gr.cla||0,"#fbbf24");if($("voxClaRead"))$("voxClaRead").textContent=fmt(gr.cla);
+  drawGrMeter($("voxSslMeter"),voxGrHist.ssl,gr.ssl||0,"#86efac");if($("voxSslRead"))$("voxSslRead").textContent=fmt(gr.ssl)}
+function voxMarkCustom(spaceToo){if(vox.preset!=="Custom"&&vox.preset!=="Off")vox.preset="Custom";if(vox.pluginPreset)vox.pluginPreset=null;if(spaceToo)vox.spacePreset=null;syncVoxPresets();syncVoxSpacePresets()}
+function voxOnChange(){if(voxDspActive()||voxFxActive())vox.on=true;voxMarkCustom(false);syncVoxMaster();drawVoxEq();drawVoxProQ();drawVoxApi();drawVoxSslEq();drawVoxMeters();restartPreviewSoon()}
 function voxSpaceChange(){if(vox.verb.on||vox.delay.on)vox.on=true;voxMarkCustom(true);syncVoxMaster();syncVoxSpaceToggle();restartPreviewSoon()}
+function voxHSendChange(){if(voxHSendOn())vox.on=true;voxMarkCustom(true);syncVoxMaster();syncVoxHSendToggle();restartPreviewSoon()}
 const voxSyncs=[];
 function syncVoxMaster(){const b=$("voxToggle");if(!b)return;b.classList.toggle("on",vox.on);b.textContent="VoxBox: "+(vox.on?"ON":"OFF")}
 function syncVoxPresets(){document.querySelectorAll("#voxPresetGrid .preset").forEach(b=>b.classList.toggle("active",b.dataset.key===vox.preset));
-  const p=VOX_PRESETS[vox.preset];$("voxHint").textContent=p?p.hint:(vox.preset==="Custom"?"Custom vocal chain. Tweak any card, or tap a preset to start over.":VOX_PRESETS.Off.hint)}
+  document.querySelectorAll("#voxPluginGrid .preset").forEach(b=>b.classList.toggle("active",b.dataset.key===vox.pluginPreset));
+  const plug=vox.pluginPreset&&VOX_PLUGIN_PRESETS[vox.pluginPreset];
+  const p=VOX_PRESETS[vox.preset];$("voxHint").textContent=plug?plug.hint:(p?p.hint:(vox.preset==="Custom"?"Custom vocal chain. Tweak any card, or tap a preset to start over.":VOX_PRESETS.Off.hint))}
 function syncVoxSpacePresets(){document.querySelectorAll("#voxSpaceGrid .preset").forEach(b=>b.classList.toggle("active",b.dataset.key===vox.spacePreset))}
 function syncVoxSpaceToggle(){const on=vox.verb.on||vox.delay.on,b=$("voxSpaceToggle");b.classList.toggle("on",on);b.textContent=on?"On":"Off"}
+function syncVoxHSendToggle(){const on=voxHSendOn(),b=$("voxHSendToggle");if(!b)return;b.classList.toggle("on",on);b.textContent=on?"On":"Off"}
+function syncVoxProcStyles(){document.querySelectorAll("#voxProCGrid .preset").forEach(b=>b.classList.toggle("active",b.dataset.key===vox.proc.style))}
 (function buildVoxUI(){
   const grid=$("voxPresetGrid");
   Object.keys(VOX_PRESETS).forEach(key=>{const p=VOX_PRESETS[key],btn=document.createElement("button");btn.type="button";btn.className="preset";btn.dataset.key=key;btn.innerHTML=p.label+"<small>"+p.blurb+"</small>";
-    btn.onclick=()=>{applyVoxPreset(key);voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();syncVoxSpacePresets();drawVoxEq();restartPreviewSoon()};grid.appendChild(btn)});
+    btn.onclick=()=>{applyVoxPreset(key);voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();syncVoxSpacePresets();syncVoxHSendToggle();drawVoxEq();drawVoxProQ();drawVoxApi();drawVoxSslEq();syncVoxProcStyles();restartPreviewSoon()};grid.appendChild(btn)});
+  const pg=$("voxPluginGrid");
+  if(pg)Object.keys(VOX_PLUGIN_PRESETS).forEach(key=>{const p=VOX_PLUGIN_PRESETS[key],btn=document.createElement("button");btn.type="button";btn.className="preset";btn.dataset.key=key;btn.innerHTML=p.label+"<small>"+p.blurb+"</small>";
+    btn.onclick=()=>{applyVoxPluginPreset(key);voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();syncVoxSpacePresets();syncVoxHSendToggle();syncVoxProcStyles();drawVoxEq();drawVoxProQ();drawVoxApi();drawVoxSslEq();drawVoxMeters();restartPreviewSoon()};pg.appendChild(btn)});
   const sg=$("voxSpaceGrid");
   Object.keys(VOX_SPACE_PRESETS).forEach(key=>{const p=VOX_SPACE_PRESETS[key],btn=document.createElement("button");btn.type="button";btn.className="preset fx-mode";btn.dataset.key=key;btn.innerHTML=p.label+"<small>"+p.blurb+"</small>";
     btn.onclick=()=>{applyVoxSpacePreset(key);voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();syncVoxSpacePresets();$("voxSpaceHint").textContent=p.hint;restartPreviewSoon()};sg.appendChild(btn)});
-  $("voxToggle").onclick=()=>{vox.on=!vox.on;if(vox.on&&!voxDspActive()&&!voxFxActive()){applyVoxPreset("Rap");voxSyncs.forEach(f=>f());drawVoxEq()}syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();restartPreviewSoon()};
+  $("voxToggle").onclick=()=>{vox.on=!vox.on;if(vox.on&&!voxDspActive()&&!voxFxActive()){applyVoxPreset("Rap");voxSyncs.forEach(f=>f());drawVoxEq();drawVoxProQ();drawVoxApi();drawVoxSslEq()}syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();syncVoxHSendToggle();restartPreviewSoon()};
   $("voxSpaceToggle").onclick=e=>{e.preventDefault();e.stopPropagation();const on=vox.verb.on||vox.delay.on;if(on){vox.verb.on=false;vox.delay.on=false;vox.spacePreset=null}else{applyVoxSpacePreset(vox.spacePreset&&VOX_SPACE_PRESETS[vox.spacePreset]?vox.spacePreset:"TightPlate")}
     voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxSpaceToggle();syncVoxSpacePresets();restartPreviewSoon()};
   $("voxPreviewBtn").onclick=togglePreview;
@@ -1774,6 +2012,51 @@ function syncVoxSpaceToggle(){const on=vox.verb.on||vox.delay.on,b=$("voxSpaceTo
   [["voxWarmDrive","drive",v=>"+"+(v*0.24).toFixed(1)+" dB"],["voxWarmTone","tone",v=>(v>0?"+":"")+v],["voxWarmMix","mix",v=>v+"%"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.warm,k,f,voxOnChange)));
   addRows("voxDoubleRows",[["voxDoubleMix","Mix",0,100,1],["voxDoubleWidth","Width",0,100,1],["voxDoubleTime","Time",8,30,0.5]]);
   [["voxDoubleMix","mix",v=>v+"%"],["voxDoubleWidth","width",v=>v+"%"],["voxDoubleTime","time",v=>Number(v).toFixed(1)+" ms"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.double,k,f,voxOnChange)));
+  (function(){const dg=$("voxDoubleGrid");if(dg)Object.keys(VOX_DOUBLE_PRESETS).forEach(key=>{const p=VOX_DOUBLE_PRESETS[key],btn=document.createElement("button");btn.type="button";btn.className="preset fx-mode";btn.dataset.key=key;btn.innerHTML=p.label+"<small>"+p.blurb+"</small>";
+    btn.onclick=()=>{applyVoxDoublePreset(key);voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();restartPreviewSoon()};dg.appendChild(btn)})})();
+  bindSelect("voxDoubleVoices",vox.double,"voices",true,voxOnChange);voxSyncs.push(()=>{$("voxDoubleVoices").value=String(vox.double.voices)});
+  function bindFlag(id,obj,key,fn){const b=$(id);if(!b)return function(){};const sync=()=>{b.classList.toggle("on",!!obj[key]);b.textContent=obj[key]?"On":"Off"};b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();obj[key]=!obj[key];sync();fn&&fn()});sync();return sync}
+  voxSyncs.push(bindToolToggle("voxProQToggle",vox.proq,voxOnChange));
+  voxSyncs.push(bindToolToggle("voxProCToggle",vox.proc,voxOnChange));
+  voxSyncs.push(bindToolToggle("voxClaToggle",vox.cla,voxOnChange));
+  voxSyncs.push(bindToolToggle("voxSslToggle",vox.ssl,voxOnChange));
+  voxSyncs.push(bindToolToggle("voxApiToggle",vox.api,voxOnChange));
+  (function(){const g=$("voxProCGrid");if(g)Object.keys(VOX_PROC_STYLES).forEach(key=>{const p=VOX_PROC_STYLES[key],btn=document.createElement("button");btn.type="button";btn.className="preset fx-mode";btn.dataset.key=key;btn.innerHTML=p.label+"<small>"+p.blurb+"</small>";
+    btn.onclick=()=>{applyVoxProcStyle(key);voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxProcStyles();restartPreviewSoon()};g.appendChild(btn)})})();
+  addRows("voxProCRows",[["voxProCThr","Threshold",-40,0,0.5],["voxProCRatio","Ratio",1.5,8,0.1],["voxProCAtt","Attack",0.2,40,0.5],["voxProCRel","Release",20,400,5],["voxProCKnee","Knee",0,12,0.5],["voxProCMax","Max GR",1,16,0.5],["voxProCMakeup","Makeup",-6,12,0.1],["voxProCMix","Mix",0,100,1]]);
+  [["voxProCThr","thr",fRel],["voxProCRatio","ratio",v=>Number(v).toFixed(1)+":1"],["voxProCAtt","attack",v=>Number(v).toFixed(1)+" ms"],["voxProCRel","release",v=>Math.round(v)+" ms"],["voxProCKnee","knee",v=>Number(v).toFixed(1)+" dB"],["voxProCMax","maxGr",v=>Number(v).toFixed(1)+" dB"],["voxProCMakeup","makeup",fdB],["voxProCMix","mix",v=>v+"%"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.proc,k,f,voxOnChange)));
+  bindSelect("voxClaMode",vox.cla,"mode",false,voxOnChange);voxSyncs.push(()=>{$("voxClaMode").value=String(vox.cla.mode)});
+  addRows("voxClaRows",[["voxClaPeak","Peak red.",0,100,1],["voxClaGain","Gain",0,100,1],["voxClaMix","Mix",0,100,1]]);
+  [["voxClaPeak","peak",v=>Math.round(v)+"%"],["voxClaGain","gain",v=>"+"+(v/100*12).toFixed(1)+" dB"],["voxClaMix","mix",v=>v+"%"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.cla,k,f,voxOnChange)));
+  voxSyncs.push(bindFlag("voxSslHpfOn",vox.ssl,"hpfOn",voxOnChange),bindFlag("voxSslLpfOn",vox.ssl,"lpfOn",voxOnChange),bindFlag("voxSslCompOn",vox.ssl,"compOn",voxOnChange),bindFlag("voxSslGateOn",vox.ssl,"gateOn",voxOnChange));
+  addRows("voxSslFiltRows",[["voxSslHpf","High-pass",20,400,1],["voxSslLpf","Low-pass",4000,20000,50]]);
+  [["voxSslHpf","hpf",fHz],["voxSslLpf","lpf",fHz]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.ssl,k,f,voxOnChange)));
+  addRows("voxSslEqRows",[["voxSslLfF","Low freq",30,400,1],["voxSslLfG","Low gain",-12,12,0.1],["voxSslLmfF","Lo-mid f",100,2500,1],["voxSslLmfG","Lo-mid g",-12,12,0.1],["voxSslLmfQ","Lo-mid Q",0.4,3,0.05],["voxSslHmfF","Hi-mid f",600,8000,10],["voxSslHmfG","Hi-mid g",-12,12,0.1],["voxSslHmfQ","Hi-mid Q",0.4,3,0.05],["voxSslHfF","High freq",1500,16000,10],["voxSslHfG","High gain",-12,12,0.1]]);
+  [["voxSslLfF","lfF",fHz],["voxSslLfG","lfG",fdB],["voxSslLmfF","lmfF",fHz],["voxSslLmfG","lmfG",fdB],["voxSslLmfQ","lmfQ",v=>Number(v).toFixed(2)],["voxSslHmfF","hmfF",fHz],["voxSslHmfG","hmfG",fdB],["voxSslHmfQ","hmfQ",v=>Number(v).toFixed(2)],["voxSslHfF","hfF",fHz],["voxSslHfG","hfG",fdB]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.ssl,k,f,voxOnChange)));
+  const sslLf=$("voxSslLfShape"),sslHf=$("voxSslHfShape");
+  const syncSslShape=()=>{sslLf.value=vox.ssl.lfBell?"bell":"shelf";sslHf.value=vox.ssl.hfBell?"bell":"shelf"};
+  sslLf.addEventListener("change",()=>{vox.ssl.lfBell=sslLf.value==="bell";voxOnChange()});sslHf.addEventListener("change",()=>{vox.ssl.hfBell=sslHf.value==="bell";voxOnChange()});
+  voxSyncs.push(syncSslShape);
+  addRows("voxSslCompRows",[["voxSslThr","Threshold",-40,0,0.5],["voxSslRatio","Ratio",1.5,8,0.1],["voxSslAtt","Attack",0.2,30,0.2],["voxSslRel","Release",20,400,5],["voxSslMakeup","Makeup",-6,12,0.1],["voxSslMix","Mix",0,100,1]]);
+  [["voxSslThr","thr",fRel],["voxSslRatio","ratio",v=>Number(v).toFixed(1)+":1"],["voxSslAtt","attack",v=>Number(v).toFixed(1)+" ms"],["voxSslRel","release",v=>Math.round(v)+" ms"],["voxSslMakeup","makeup",fdB],["voxSslMix","mix",v=>v+"%"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.ssl,k,f,voxOnChange)));
+  addRows("voxSslGateRows",[["voxSslGThr","Threshold",-60,-10,0.5],["voxSslGRange","Range",0,24,0.5],["voxSslGAtt","Attack",0.2,20,0.2],["voxSslGRel","Release",20,300,5]]);
+  [["voxSslGThr","gateThr",fRel],["voxSslGRange","gateRange",v=>Number(v).toFixed(1)+" dB"],["voxSslGAtt","gateAtt",v=>Number(v).toFixed(1)+" ms"],["voxSslGRel","gateRel",v=>Math.round(v)+" ms"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.ssl,k,f,voxOnChange)));
+  addRows("voxApiRows",[["voxApiLfF","Low f",40,400,1],["voxApiLfG","Low g",-12,12,0.1],["voxApiLmF","Low-mid f",200,1000,1],["voxApiLmG","Low-mid g",-12,12,0.1],["voxApiHmF","High-mid f",800,5000,10],["voxApiHmG","High-mid g",-12,12,0.1],["voxApiHfF","High f",2000,12000,10],["voxApiHfG","High g",-12,12,0.1],["voxApiAirF","Air f",6000,16000,50],["voxApiAirG","Air g",-12,12,0.1]]);
+  [["voxApiLfF","lfF",fHz],["voxApiLfG","lfG",fdB],["voxApiLmF","lmF",fHz],["voxApiLmG","lmG",fdB],["voxApiHmF","hmF",fHz],["voxApiHmG","hmG",fdB],["voxApiHfF","hfF",fHz],["voxApiHfG","hfG",fdB],["voxApiAirF","airF",fHz],["voxApiAirG","airG",fdB]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.api,k,f,voxOnChange)));
+  $("voxApiFlat").onclick=()=>{vox.api.lfG=0;vox.api.lmG=0;vox.api.hmG=0;vox.api.hfG=0;vox.api.airG=0;voxSyncs.forEach(f=>f());voxOnChange()};
+  (function(){const g=$("voxHSendGrid");if(g)Object.keys(VOX_HSEND_PRESETS).forEach(key=>{const p=VOX_HSEND_PRESETS[key],btn=document.createElement("button");btn.type="button";btn.className="preset fx-mode";btn.dataset.key=key;btn.innerHTML=p.label+"<small>"+p.blurb+"</small>";
+    btn.onclick=()=>{applyVoxHSendPreset(key);voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxHSendToggle();$("voxHSendHint").textContent=p.hint;restartPreviewSoon()};g.appendChild(btn)})})();
+  $("voxHSendToggle").onclick=e=>{e.preventDefault();e.stopPropagation();if(voxHSendOn()){vox.hsend.delay.on=false;vox.hsend.verb.on=false}else{applyVoxHSendPreset("AnalogThrow")}
+    voxSyncs.forEach(f=>f());syncVoxMaster();syncVoxPresets();syncVoxHSendToggle();restartPreviewSoon()};
+  addRows("voxHDelayRows",[["voxHDelayMix","Mix",0,100,1],["voxHDelayTime","Time",0,100,1],["voxHDelayFb","Feedback",0,100,1],["voxHDelayTone","Tone",0,100,1],["voxHDelayLoFi","Lo-fi",0,100,1]]);
+  [["voxHDelayMix","mix",v=>v+"%"],["voxHDelayTime","time",v=>v+"%"],["voxHDelayFb","feedback",v=>v+"%"],["voxHDelayTone","tone",v=>v+"%"],["voxHDelayLoFi","lofi",v=>v+"%"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.hsend.delay,k,f,voxHSendChange)));
+  addRows("voxHVerbRows",[["voxHVerbMix","Mix",0,100,1],["voxHVerbSize","Size",0,100,1],["voxHVerbDecay","Decay",0,100,1],["voxHVerbTone","Tone",0,100,1],["voxHVerbPre","Predelay",0,100,1]]);
+  [["voxHVerbMix","mix",v=>v+"%"],["voxHVerbSize","size",v=>v+"%"],["voxHVerbDecay","decay",v=>v+"%"],["voxHVerbTone","tone",v=>v+"%"],["voxHVerbPre","pre",v=>Math.round(4+v*0.6)+" ms"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.hsend.verb,k,f,voxHSendChange)));
+  bindSelect("voxHDelayMode",vox.hsend.delay,"mode",false,()=>{vox.hsend.delay.on=true;voxHSendChange()});
+  bindSelect("voxHVerbMode",vox.hsend.verb,"mode",false,()=>{vox.hsend.verb.on=true;voxHSendChange()});
+  voxSyncs.push(()=>{$("voxHDelayMode").value=String(vox.hsend.delay.mode);$("voxHVerbMode").value=String(vox.hsend.verb.mode)});
+  voxSyncs.push(syncVoxHSendToggle,syncVoxProcStyles);
+
   addRows("voxVerbRows",[["voxVerbMix","Mix",0,100,1],["voxVerbSize","Size",0,100,1],["voxVerbDecay","Decay",0,100,1],["voxVerbTone","Tone",0,100,1],["voxVerbPre","Predelay",0,100,1]]);
   [["voxVerbMix","mix",v=>v+"%"],["voxVerbSize","size",v=>v+"%"],["voxVerbDecay","decay",v=>v+"%"],["voxVerbTone","tone",v=>v+"%"],["voxVerbPre","pre",v=>Math.round(4+v*0.6)+" ms"]].forEach(([id,k,f])=>voxSyncs.push(bindSlider(id,vox.verb,k,f,voxSpaceChange)));
   addRows("voxDelayRows",[["voxDelayMix","Mix",0,100,1],["voxDelayTime","Time",0,100,1],["voxDelayFb","Feedback",0,100,1],["voxDelayTone","Tone",0,100,1],["voxDelayAge","Age",0,100,1]]);
@@ -1791,7 +2074,59 @@ function drawVoxEq(){if(!voxEqG)return;const W=600,H=140,g=voxEqG,sr=48000,X=f=>
   [-4,0,4].forEach(d=>{g.beginPath();g.moveTo(0,Y(d));g.lineTo(W,Y(d));g.stroke();g.fillText((d>0?"+":"")+d,4,Y(d)-2)});
   g.beginPath();for(let i=0;i<=300;i++){const f=20*Math.pow(1000,i/300);let d=0;cs.forEach(c=>d+=MMS.magDb(c,f,sr));i?g.lineTo(X(f),Y(d)):g.moveTo(X(f),Y(d))}
   g.strokeStyle=vox.eq.on&&vox.on?"#7dd3fc":"rgba(125,211,252,.4)";g.lineWidth=2.5;g.stroke();g.lineWidth=1}
-syncVoxMaster();syncVoxPresets();syncVoxSpacePresets();syncVoxSpaceToggle();drawVoxEq();
+function voxCurveGrid(g,W,H,Y,dbs){g.clearRect(0,0,W,H);g.fillStyle="rgba(0,0,0,.35)";g.fillRect(0,0,W,H);g.strokeStyle="rgba(255,255,255,.08)";g.fillStyle="rgba(255,255,255,.4)";g.font="10px system-ui";const X=f=>Math.log(f/20)/Math.log(1000)*W;
+  [50,100,200,500,1000,2000,5000,10000].forEach(f=>{g.beginPath();g.moveTo(X(f),0);g.lineTo(X(f),H);g.stroke();g.fillText(f>=1000?f/1000+"k":f,X(f)+2,H-4)});
+  dbs.forEach(d=>{g.beginPath();g.moveTo(0,Y(d));g.lineTo(W,Y(d));g.stroke();g.fillText((d>0?"+":"")+d,4,Y(d)-2)});return X}
+const PQ_W=600,PQ_H=220,PQ_DB=18,PQ_COLORS=["#f472b6","#facc15","#4ade80","#22d3ee","#a78bfa","#fb7185","#34d399","#c084fc"];
+const voxProQCanvas=$("voxProQCanvas"),voxProQG=voxProQCanvas&&voxProQCanvas.getContext?voxProQCanvas.getContext("2d"):null;
+const pqX=f=>Math.log(f/20)/Math.log(1000)*PQ_W,pqF=x=>20*Math.pow(1000,tClamp(x/PQ_W,0,1)),pqY=g=>PQ_H/2-g/PQ_DB*(PQ_H/2-12),pqGain=y=>tClamp((PQ_H/2-y)/(PQ_H/2-12)*PQ_DB,-PQ_DB,PQ_DB);
+function proqBandLive(b){if(!b||b.on===false)return false;const t=b.type||"peaking";if(t==="highpass"||t==="lowpass"||t==="notch")return true;return Math.abs(Number(b.g)||0)>=0.05}
+function drawVoxProQ(){if(!voxProQG)return;const g=voxProQG,sr=48000,cs=[];(vox.proq.bands||[]).forEach(b=>{if(!proqBandLive(b))return;cs.push(MMS.coefs(b.type||"peaking",b.f,sr,b.q,b.g))});
+  voxCurveGrid(g,PQ_W,PQ_H,pqY,[-12,-6,0,6,12]);
+  g.beginPath();for(let i=0;i<=300;i++){const f=20*Math.pow(1000,i/300);let d=0;cs.forEach(c=>d+=MMS.magDb(c,f,sr));i?g.lineTo(pqX(f),pqY(tClamp(d,-PQ_DB-2,PQ_DB+2))):g.moveTo(pqX(f),pqY(tClamp(d,-PQ_DB-2,PQ_DB+2)))}
+  g.strokeStyle=vox.proq.on&&vox.on?"#7dd3fc":"rgba(125,211,252,.4)";g.lineWidth=2.5;g.stroke();
+  (vox.proq.bands||[]).forEach((b,i)=>{const y=pqY((b.type==="highpass"||b.type==="lowpass"||b.type==="notch")?0:b.g);g.beginPath();g.arc(pqX(b.f),y,i===vox.proq.sel?11:8,0,Math.PI*2);g.fillStyle=PQ_COLORS[i%8];g.globalAlpha=b.on===false?0.35:(i===vox.proq.sel?1:.75);g.fill();g.globalAlpha=1;g.fillStyle="#000";g.font="bold 10px system-ui";g.fillText(String(i+1),pqX(b.f)-3,y+3)})}
+function syncVoxProQEditor(){const b=vox.proq.bands[vox.proq.sel];if(!b)return;
+  $("voxProQType").value=b.type;$("voxProQFreq").value=Math.log(b.f/20)/Math.log(1000)*1000;$("voxProQFreqN").value=Math.round(b.f);
+  $("voxProQGain").value=b.g;$("voxProQGainN").value=Number(b.g).toFixed(1);$("voxProQQ").value=b.q;$("voxProQQN").value=Number(b.q).toFixed(2);
+  const onBtn=$("voxProQBandOn");if(onBtn){onBtn.classList.toggle("on",b.on!==false);onBtn.textContent=b.on===false?"Off":"On"}
+  document.querySelectorAll("#voxProQTabs button").forEach((t,i)=>t.classList.toggle("active",i===vox.proq.sel));drawVoxProQ()}
+function voxProQChanged(){if(vox.proq.on||vox.proq.bands.some(proqBandLive)){vox.proq.on=true;vox.on=true}voxMarkCustom(false);syncVoxMaster();syncVoxProQEditor();restartPreviewSoon()}
+(function(){const tabs=$("voxProQTabs");if(!tabs)return;
+  vox.proq.bands.forEach((b,i)=>{const t=document.createElement("button");t.type="button";t.className="band-tab";t.textContent=String(i+1);t.style.borderColor=PQ_COLORS[i%8];t.onclick=()=>{vox.proq.sel=i;syncVoxProQEditor()};tabs.appendChild(t)});
+  $("voxProQType").onchange=()=>{vox.proq.bands[vox.proq.sel].type=$("voxProQType").value;voxProQChanged()};
+  $("voxProQFreq").oninput=e=>{vox.proq.bands[vox.proq.sel].f=20*Math.pow(1000,Number(e.target.value)/1000);voxProQChanged()};
+  $("voxProQFreqN").onchange=e=>{vox.proq.bands[vox.proq.sel].f=tClamp(Number(e.target.value)||1000,20,20000);voxProQChanged()};
+  $("voxProQGain").oninput=e=>{vox.proq.bands[vox.proq.sel].g=Number(e.target.value);voxProQChanged()};
+  $("voxProQGainN").onchange=e=>{vox.proq.bands[vox.proq.sel].g=tClamp(Number(e.target.value)||0,-18,18);voxProQChanged()};
+  $("voxProQQ").oninput=e=>{vox.proq.bands[vox.proq.sel].q=Number(e.target.value);voxProQChanged()};
+  $("voxProQQN").onchange=e=>{vox.proq.bands[vox.proq.sel].q=tClamp(Number(e.target.value)||1,0.1,18);voxProQChanged()};
+  $("voxProQBandOn").onclick=e=>{e.preventDefault();e.stopPropagation();const b=vox.proq.bands[vox.proq.sel];b.on=b.on===false;voxProQChanged()};
+  $("voxProQFlat").onclick=()=>{vox.proq.bands=defaultProQBands();vox.proq.sel=0;vox.proq.on=false;voxSyncs.forEach(f=>f());voxMarkCustom(false);syncVoxMaster();syncVoxProQEditor();restartPreviewSoon()};
+  let pqDrag=-1;
+  function pqPt(e){const r=voxProQCanvas.getBoundingClientRect();return{x:(e.clientX-r.left)*PQ_W/Math.max(1,r.width),y:(e.clientY-r.top)*PQ_H/Math.max(1,r.height)}}
+  voxProQCanvas.addEventListener("pointerdown",e=>{const p=pqPt(e);let best=-1,bd=1e9;vox.proq.bands.forEach((b,i)=>{const y=pqY((b.type==="highpass"||b.type==="lowpass"||b.type==="notch")?0:b.g);const d=Math.hypot(pqX(b.f)-p.x,y-p.y);if(d<bd){bd=d;best=i}});if(bd<44){pqDrag=best;vox.proq.sel=best;if(vox.proq.bands[best].on===false)vox.proq.bands[best].on=true;try{voxProQCanvas.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();syncVoxProQEditor()}});
+  voxProQCanvas.addEventListener("pointermove",e=>{if(pqDrag<0)return;const p=pqPt(e),b=vox.proq.bands[pqDrag];b.f=tClamp(pqF(p.x),20,20000);if(b.type!=="highpass"&&b.type!=="lowpass"&&b.type!=="notch")b.g=Math.round(pqGain(p.y)*10)/10;e.preventDefault();voxProQChanged()});
+  const pqUp=()=>{pqDrag=-1};voxProQCanvas.addEventListener("pointerup",pqUp);voxProQCanvas.addEventListener("pointercancel",pqUp);
+  voxSyncs.push(syncVoxProQEditor);
+})();
+const voxApiCanvas=$("voxApiCanvas"),voxApiG=voxApiCanvas&&voxApiCanvas.getContext?voxApiCanvas.getContext("2d"):null;
+function drawVoxApi(){if(!voxApiG)return;const W=600,H=140,g=voxApiG,sr=48000,Y=d=>H/2-d/12*(H/2-10),X=voxCurveGrid(g,W,H,Y,[-8,0,8]);
+  const specs=[["lowshelf",vox.api.lfF,vox.api.lfG,0.7071],["peaking",vox.api.lmF,vox.api.lmG,0],["peaking",vox.api.hmF,vox.api.hmG,0],["peaking",vox.api.hfF,vox.api.hfG,0],["highshelf",vox.api.airF,vox.api.airG,0.7071]];
+  const cs=[];specs.forEach(s=>{const gn=Number(s[2])||0;if(Math.abs(gn)<0.05)return;cs.push(MMS.coefs(s[0],s[1],sr,s[3]|| (0.55+0.11*Math.abs(gn)),gn))});
+  g.beginPath();for(let i=0;i<=300;i++){const f=20*Math.pow(1000,i/300);let d=0;cs.forEach(c=>d+=MMS.magDb(c,f,sr));i?g.lineTo(X(f),Y(d)):g.moveTo(X(f),Y(d))}
+  g.strokeStyle=vox.api.on&&vox.on?"#fbbf24":"rgba(251,191,36,.4)";g.lineWidth=2.5;g.stroke();g.lineWidth=1}
+const voxSslEqCanvas=$("voxSslEqCanvas"),voxSslEqG=voxSslEqCanvas&&voxSslEqCanvas.getContext?voxSslEqCanvas.getContext("2d"):null;
+function drawVoxSslEq(){if(!voxSslEqG)return;const W=600,H=140,g=voxSslEqG,sr=48000,Y=d=>H/2-d/12*(H/2-10),X=voxCurveGrid(g,W,H,Y,[-8,0,8]),s=vox.ssl,cs=[];
+  if(s.hpfOn)cs.push(MMS.coefs("highpass",s.hpf,sr,0.7071));if(s.lpfOn)cs.push(MMS.coefs("lowpass",s.lpf,sr,0.7071));
+  if(Math.abs(s.lfG)>=0.05)cs.push(MMS.coefs(s.lfBell?"peaking":"lowshelf",s.lfF,sr,s.lfBell?1:0.7071,s.lfG));
+  if(Math.abs(s.lmfG)>=0.05)cs.push(MMS.coefs("peaking",s.lmfF,sr,s.lmfQ,s.lmfG));
+  if(Math.abs(s.hmfG)>=0.05)cs.push(MMS.coefs("peaking",s.hmfF,sr,s.hmfQ,s.hmfG));
+  if(Math.abs(s.hfG)>=0.05)cs.push(MMS.coefs(s.hfBell?"peaking":"highshelf",s.hfF,sr,s.hfBell?1:0.7071,s.hfG));
+  g.beginPath();for(let i=0;i<=300;i++){const f=20*Math.pow(1000,i/300);let d=0;cs.forEach(c=>d+=MMS.magDb(c,f,sr));i?g.lineTo(X(f),Y(d)):g.moveTo(X(f),Y(d))}
+  g.strokeStyle=vox.ssl.on&&vox.on?"#86efac":"rgba(134,239,172,.4)";g.lineWidth=2.5;g.stroke();g.lineWidth=1}
+syncVoxMaster();syncVoxPresets();syncVoxSpacePresets();syncVoxSpaceToggle();syncVoxHSendToggle();syncVoxProcStyles();drawVoxEq();drawVoxProQ();drawVoxApi();drawVoxSslEq();drawVoxMeters();
+
 </script>
 
 <div class="update-bar hidden" id="updateBar" role="status"><span>Update available</span><button type="button" id="updateReload">Reload</button><button type="button" class="x" id="updateDismiss" aria-label="Dismiss">✕</button></div>

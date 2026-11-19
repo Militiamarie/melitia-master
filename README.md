@@ -105,10 +105,11 @@ A vocal-processing stage that runs **first** (on your take), before the mix tool
 Tap a named preset or open any card and switch it on. The master **VoxBox: OFF** toggle bypasses the whole
 stage completely — with it off, exports stay bit-identical to the previous chain.
 
-> **About Waves and ValhallaDSP:** neither has a web SDK, and their plugins cannot run inside a browser.
-> VoxBox processors are **original in-browser code written for this app**, modelled on the *kind* of vocal
-> and space tools used on records. They contain no Waves, Valhalla, SSL or other third-party code, and this
-> project is not affiliated with or endorsed by those companies; names are only used to describe the style.
+> **About FabFilter, Waves and ValhallaDSP:** none of them has a web SDK, and their plugins cannot run inside
+> a browser. VoxBox processors are **original in-browser code written for this app**, modelled on the *kind*
+> of vocal and space tools used on records. They contain no FabFilter, Waves, Valhalla, SSL, API or other
+> third-party code, and this project is not affiliated with or endorsed by those companies; names are only
+> used to describe the style.
 
 All processing is time-domain: minimum-phase IIR filters, smooth gain (the same attack/release + second
 one-pole stage as the studio chain), 4×-oversampled `tanh` warmth, Haas doubler, and delay-network reverbs.
@@ -116,8 +117,11 @@ There is **no pitch correction**, no phase vocoder, and **no shimmer** (no pitch
 you do not get a robot, warble or "AI" sound.
 
 **Vocal presets:** Rap Lead, Clean R&B, Autotuned Pop (bright stacked pop chain — the name is the style,
-not an autotune effect), Lo-Fi, Radio Ready, Podcast / Voice. Each one sets the cards below; you can tweak
-anything afterwards (the preset then reads Custom).
+not an autotune effect), Lo-Fi, Radio Ready, Podcast / Voice. Each one sets the original vocal cards below
+and leaves the newer studio-plugin cards off; you can tweak anything afterwards (the preset then reads Custom).
+
+**Plugin presets** load only the named original processor (everything else stays off): Pro-Q Vocal, Pro-C Vocal,
+CLA Lead, CLA Punch, SSL Channel, API Presence, H-Delay Throw, H-Verb Plate.
 
 | Card | What it does |
 |---|---|
@@ -126,11 +130,21 @@ anything afterwards (the preset then reads Custom).
 | **Vocal Comp** | Stereo-linked compressor, 120 Hz sidechain high-pass, soft knee, GR capped at Max GR, makeup and mix (parallel). |
 | **Gate / Expander** | Soft-knee downward expander with a 120 Hz detector high-pass and double-smoothed gain — closes the floor between phrases without chatter or a hard mute. Range caps how far it can shut. |
 | **Warmth** | The same level-matched, 4×-oversampled saturator as the mix Saturation tool, with milder vocal defaults. |
-| **Doubler** | Short left/right Haas delays (about 12–30 ms) and a tiny time wobble, high-passed. Time-domain only — no detune. |
+| **Doubler (Waves-style)** | Short left/right Haas delays (about 12–30 ms), 2- or 4-voice stack, and a tiny time wobble, high-passed. Time-domain only — no detune. 2-voice mode matches the previous doubler. Presets: Tight, Wide, Quad. |
 | **V-Space (Valhalla-style)** | Original plate / hall / room reverbs (dense FDN, Jot decay, loop damping, slow delay-time chorus, early reflections) and a vintage / ping-pong / slap delay with damped feedback and optional tape-style wow. Space presets: Tight Plate, Lush Hall, Intimate Room, Vintage Echo, Slapback, Dream Delay. Tails always decay; no octave shimmer. |
+| **Pro-Q style EQ** | Visual, 8-band parametric EQ with a frequency-response display and draggable band dots (iPad-friendly pointer events). Bell / shelf / notch / high-pass / low-pass, Q / freq / gain editors. Flat or disabled bands are skipped, so a flattened curve is a complete bypass of this card. Minimum-phase IIR only — no dynamic, linear-phase or FIR modes. |
+| **Pro-C style Comp** | Compressor with a live / export gain-reduction meter. Styles (Clean, Classic, Opto, Vocal, Punch) change detection and release character only. Stereo-linked, sidechain high-pass, soft knee, GR capped at Max GR, makeup and mix. Smooth gain only. |
+| **CLA Vocal Comp** | Opto (slower, program-dependent) or FET (faster, punchier) vocal compressor. Peak Reduction, Gain and Mix. Smooth gain, no tube/FET modelling distortion. Visual GR meter. |
+| **SSL Channel** | Channel strip: high-pass / low-pass → compressor / gate → 4-band EQ (shelf or bell on the ends, two mid bells). Curve display and GR meter. Broad musical bands and smooth gain. |
+| **API style EQ** | Five-band EQ with proportional Q (small boosts stay broad; larger boosts get a little tighter), shelves on the ends and bells in the middle. Curve display. Minimum-phase IIR only. |
+| **H-Send (H-Delay / H-Reverb style)** | Send effects: analog / digital / ping-pong / multi-tap delay, plus plate / chamber / hall FDN reverb (denser early energy, less chorus than V-Space). Presets: Analog throw, Digital slap, Ping-pong, Multi-tap, Plate send, Chamber send. Tails always decay; no convolution library, no shimmer. |
 
-Live preview and export share the same path. Dynamics run in an `AudioWorklet` (`mm-vox`, same `VoxDSP` source;
-ScriptProcessor fallback). Warmth, doubler and V-Space use the Web Audio graph (including on export, with tail).
+Signal flow inside VoxBox (any card that is off is skipped): gate → vocal EQ → API EQ → Pro-Q → SSL strip →
+de-esser → vocal comp → Pro-C → CLA → warmth → doubler → V-Space → H-Send.
+
+Live preview and export share the same path. Dynamics (including Pro-C, CLA and the SSL strip) run in an
+`AudioWorklet` (`mm-vox`, same `VoxDSP` source; ScriptProcessor fallback) and post live GR for the meters.
+Warmth, doubler, V-Space and H-Send use the Web Audio graph (including on export, with tail).
 
 ## Tools / Chain
 Five tools, each in its own card with an On/Off toggle (cards collapse; tap the title).
@@ -166,7 +180,7 @@ fs/4 sine at 45° phase: sample peak −3.01 dBFS, true peak ≈ 0.0 dBTP (−0.
 of every target with true peak ≤ −1 dBTP; Space FX stays bounded and decays at max feedback in every mode.
 
 ### Tools limitations
-- “Inspired by” only: this project is **not affiliated with or endorsed by** Tokyo Dawn Records (TDR), Valhalla DSP, Softube, LANDR or Youlean. Their names are used only to describe the style of tool; none of their code or DSP is used.
+- “Inspired by” only: this project is **not affiliated with or endorsed by** Tokyo Dawn Records (TDR), Valhalla DSP, Softube, LANDR, Youlean, FabFilter, Waves Audio Ltd., Solid State Logic, Automated Processes, Inc. or Chris Lord-Alge. Their names are used only to describe the style of tool; none of their code or DSP is used.
 - The creative EQ is static (dynamic bands live in the separate Dynamic EQ card). Web Audio shelves ignore Q.
 - Space FX is an algorithmic approximation (FDN + modulated delays), not a recreation of any commercial algorithm; there is no true pitch-shifter (the “pitch drift” comes from delay modulation, a few cents). Feedback is mapped to a decay time (max ≈ 15 s), so tails always die out; exports get extra length for the tail.
 - Live preview is an approximation of the export: immersive gain matching, the preset master, and the auto-master gain are adaptive in realtime but exact (measured) in the export. Trust the export numbers.

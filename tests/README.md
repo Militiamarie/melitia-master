@@ -8,4 +8,4 @@ node tests/run.mjs
 ```
 Covers: null test vs previous release, Smart Master on pink noise / sweep / drum loop / sibilant bursts (LUFS, true peak,
 NaN), fixed LUFS targets with every studio card on, aliasing (1 k + 15 k tones), multitone residual (warble/musical
-noise), pink-noise per-bin spread, gain-trace smoothness, live-preview worklet, VoxBox presets (voice + sibilant, NaN / peaks) and VoxBox-off identity.
+noise), pink-noise per-bin spread, gain-trace smoothness, live-preview worklet, VoxBox presets (voice + sibilant, NaN / peaks) and VoxBox-off identity, plus FabFilter-style / Waves-style plugin presets (finite samples, peaks) and bypass identity after those presets (including a flattened Pro-Q matching Off).
